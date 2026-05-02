@@ -1,0 +1,38 @@
+======================================================================
+EXPERIMENT 1 — Synthetic Method Comparison (Path B)
+  10 seeds, 120 patients, 120 days each
+  State-direct lambda = [0.02 0.2  0.4 ]
+  3-way split: 60 train / 20 val / 40 test
+  Thresholds tuned on val, evaluated on test (no leakage)
+======================================================================
+  Run  2/10  Naive Th:0.92 | Logistic:0.93 | Random F:0.88 | Pattern-:0.94 | HMM (no :0.92 | HMM (wit:0.92 | HMM (wit:0.75
+  Run  4/10  Naive Th:0.92 | Logistic:0.92 | Random F:0.90 | Pattern-:0.94 | HMM (no :0.92 | HMM (wit:0.92 | HMM (wit:0.60
+  Run  6/10  Naive Th:0.87 | Logistic:0.87 | Random F:0.88 | Pattern-:0.90 | HMM (no :0.85 | HMM (wit:0.86 | HMM (wit:0.64
+  Run  8/10  Naive Th:0.93 | Logistic:0.94 | Random F:0.94 | Pattern-:0.96 | HMM (no :0.94 | HMM (wit:0.94 | HMM (wit:0.73
+  Run 10/10  Naive Th:0.93 | Logistic:0.92 | Random F:0.91 | Pattern-:0.95 | HMM (no :0.93 | HMM (wit:0.93 | HMM (wit:0.62
+
+  Estimated lambda from last run: [0.01834504 0.20078125 0.40786948]
+
+  Method                                      AUROC     Lead Time (days)
+  ----------------------------------------------------------------------
+  Naive Threshold                  0.915 +/- 0.018     6.56 +/- 0.20
+  Logistic Regression              0.920 +/- 0.021     6.52 +/- 0.24
+  Random Forest                    0.915 +/- 0.022     6.33 +/- 0.27
+  Pattern-Mixture HMM (MNAR)       0.939 +/- 0.017     6.55 +/- 0.24
+  HMM (no L|S)                     0.912 +/- 0.024     6.59 +/- 0.20
+  HMM (with L|S)                   0.916 +/- 0.023     6.60 +/- 0.21
+  HMM (with L|S, pt-relative)      0.669 +/- 0.051     6.19 +/- 0.19
+
+======================================================================
+ABLATION — Path B
+  10 seeds, 120 patients, 120 days each
+  3-way split, threshold tuned on val, evaluated on test
+======================================================================
+
+  Condition                                           AUROC        Lead Time
+  ------------------------------------------------------------------------
+  Full Model (L|S + pt-relative)           0.698 +/- 0.074    6.30 +/- 0.20
+  No L|S factor                            0.688 +/- 0.074    6.31 +/- 0.22
+  No Patient-Relative                      0.900 +/- 0.018    6.60 +/- 0.14
+  No Endogenous Sampling (data-side)       0.630 +/- 0.060    6.33 +/- 0.44
+  No Hidden State                          0.898 +/- 0.018    6.59 +/- 0.13
