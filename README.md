@@ -1,8 +1,8 @@
 # crohns-hmm-flare-prediction
 
-Bayesian hidden Markov framework for time-to-flare estimation in Crohn's disease under endogenous laboratory sampling. **Simulation study.**
+A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study **Simulation study.**
 
-This repository contains the code accompanying the paper *"A Bayesian Hidden Markov Framework for Time-to-Flare Estimation in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study"* (Jasti, 2026).
+This repository contains the code accompanying the paper *"A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study"* (Jasti, 2026).
 
 > **All results in this repository are computational and use synthetic data only.** No real patient records are used anywhere in the simulation portion of this work. The IBDMDB grounding in Section IX-I uses publicly available data from the NIH Integrative Human Microbiome Project. Real-data validation, comparison against established missing-data methodology on real cohorts, and prospective clinical study under IRB oversight are essential before any deployment.
 
@@ -115,13 +115,30 @@ MIT. See `LICENSE`.
 
 If you use this code or framework in your work, please cite the accompanying paper:
 
+## Citation
+
+If you use this code or framework in your work, please cite the accompanying paper:
+
 ```
 @misc{Jasti2026crohnshmm,
   author       = {Rishi Jasti},
-  title        = {A Bayesian Hidden Markov Framework for Time-to-Flare Estimation in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study},
+  title        = {A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study},
   year         = {2026},
   howpublished = {Manuscript},
   note         = {Code: \url{https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction}}
+}
+```
+
+If you use the archived code and reproducibility materials, please also cite:
+
+```
+@software{jasti2026code,
+  author       = {Rishi Jasti},
+  title        = {A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials},
+  version      = {2.2.0},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.21971684}
 }
 ```
 
