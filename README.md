@@ -1,6 +1,6 @@
 # crohns-hmm-flare-prediction
 
-A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study **Simulation study.**
+A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: **Simulation study.**
 
 This repository contains the code accompanying the paper *"A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study"* (Jasti, 2026).
 
