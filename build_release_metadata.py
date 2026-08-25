@@ -18,6 +18,15 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+
+def _release_config(root):
+    """Read the tracked release configuration so a clean rebuild cannot
+    overwrite a real archival DOI with the placeholder."""
+    p = root / 'release_config.json'
+    if not p.exists():
+        return {}
+    return json.loads(p.read_text())
+
 def main() -> None:
     ap=argparse.ArgumentParser(); ap.add_argument('--root',type=Path,default=Path('.')); ap.add_argument('--outputs',type=Path,default=Path('final_outputs'))
     a=ap.parse_args(); root=a.root.resolve(); out=a.outputs if a.outputs.is_absolute() else root/a.outputs
@@ -38,8 +47,9 @@ def main() -> None:
       'generated_tex_sha256':sha256(root/'Crohns_HMM_Time_to_Flare_Study.tex'),
       'generated_pdf_sha256':sha256(root/'Crohns_HMM_Time_to_Flare_Study.pdf'),
       'output_config_sha256':sha256(out/'config.json'),
-      'public_archive_doi':'PENDING_AUTHOR_DEPOSIT',
-      'doi_note':'A DOI cannot be invented. The author must deposit the immutable release and replace this field before submission.'
+      'public_archive_doi':_release_config(root).get('public_archive_doi','PENDING_AUTHOR_DEPOSIT'),
+      'software_version':_release_config(root).get('software_version'),
+      'doi_note':'Read from release_config.json. A DOI cannot be invented; deposit the immutable release and set it there before submission.'
     }
     (root/'release_metadata.json').write_text(json.dumps(meta,indent=2)+'\n')
     print(root/'release_metadata.json')

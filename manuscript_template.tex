@@ -10,6 +10,10 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit}
 \usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study},
+  pdfauthor={Rishi Jasti}
+}
 \graphicspath{{figures/}}
 \interdisplaylinepenalty=2500
 \newcommand{\R}{\mathrm{R}}
@@ -30,7 +34,7 @@
 \maketitle
 
 \begin{abstract}
-We present a hidden Markov framework for longitudinal Crohn's disease monitoring with state-dependent laboratory sampling. The model combines daily Gaussian wearable summaries, intermittent log-normal laboratory biomarkers, and the laboratory-draw indicator in one observation likelihood; laboratory values contribute only on days when a panel is drawn. At each landmark day, we distinguish two mathematically different first-passage quantities: an unconditional distribution that assigns the current flare posterior to day zero, and a transient-conditional distribution whose mean is necessarily bounded by the Remission- and Mild-state hitting-time means. Model parameters are estimated without simulator state labels by Baum--Welch expectation maximization using @@N_STARTS@@ prespecified initializations. A @@N_PARAM_MEMBERS@@-member responsibility-conditioned empirical-Bayes mixture propagates transition, emission, initial-state, and sampling-rate variation through HMM filtering and first-passage calculations; the event-history comparator is evaluated as a separate @@N_HAZARD_MEMBERS@@-member patient-bootstrap ensemble. Evaluation retains administratively censored landmarks, preserves the probability tail beyond the @@N_DAYS@@-day observation window, and uses a censored logarithmic score, fixed-horizon Brier scores, calibration, interval coverage, and sharpness with seed- and patient-clustered uncertainty. Complete landmark PMFs and all fitted model objects are archived. Across ten independent simulations of 120 patients each, the endogenous-sampling HMM obtained a censored log score of @@PROP_NLL@@ (95\% CI @@PROP_NLL_CI@@), a four-horizon mean Brier score of @@PROP_IBS@@ (@@PROP_IBS_CI@@), and @@PROP_COV@@ empirical coverage for nominal 90\% intervals. Its difference from the otherwise identical HMM that ignored the draw indicator was small: @@DIFF_NOLAM_NLL@@ in log score (@@DIFF_NOLAM_NLL_CI@@) and @@DIFF_NOLAM_IBS@@ in mean Brier score (@@DIFF_NOLAM_IBS_CI@@), where positive values favor the endogenous model. The analysis therefore supports the validity of the time-to-flare interface but does not establish a practically important gain from the draw indicator in this well-specified regime. A prespecified sensitivity analysis excluding landmarks already in the flare state is reported separately.
+We present a hidden Markov framework for longitudinal Crohn's disease monitoring with state-dependent laboratory sampling. The model combines daily Gaussian wearable summaries, intermittent log-normal laboratory biomarkers, and the laboratory-draw indicator in one observation likelihood; laboratory values contribute only on days when a panel is drawn. At each landmark day, we distinguish two mathematically different first-passage quantities: an unconditional distribution that assigns the current flare posterior to day zero, and a transient-conditional distribution whose mean is necessarily bounded by the Remission- and Mild-state hitting-time means. Model parameters are estimated without simulator state labels by Baum--Welch expectation maximization using @@N_STARTS@@ fixed observable-data initializations. A @@N_PARAM_MEMBERS@@-member responsibility-conditioned empirical-Bayes mixture propagates transition, emission, initial-state, and sampling-rate variation through HMM filtering and first-passage calculations; the event-history comparator is evaluated as a separate @@N_HAZARD_MEMBERS@@-member patient-bootstrap ensemble. Evaluation retains administratively censored landmarks, preserves the probability tail beyond the @@N_DAYS@@-day observation window, and uses a censored logarithmic score, fixed-horizon Brier scores, calibration, interval coverage, and sharpness with seed- and patient-clustered uncertainty. Complete landmark PMFs and all fitted model objects are archived. Across ten independent simulations of 120 patients each, the endogenous-sampling HMM obtained a censored log score of @@PROP_NLL@@ (95\% CI @@PROP_NLL_CI@@), a four-horizon mean Brier score of @@PROP_IBS@@ (@@PROP_IBS_CI@@), and @@PROP_COV@@ empirical coverage for nominal 90\% intervals. Its difference from the otherwise identical HMM that ignored the draw indicator was small: @@DIFF_NOLAM_NLL@@ in log score (@@DIFF_NOLAM_NLL_CI@@) and @@DIFF_NOLAM_IBS@@ in mean Brier score (@@DIFF_NOLAM_IBS_CI@@), where positive values favor the endogenous model. The analysis therefore supports the validity of the time-to-flare interface but does not establish a practically important gain from the draw indicator in this well-specified regime. A secondary sensitivity analysis excluding landmarks already in the flare state is reported separately.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -218,7 +222,7 @@ Four models produce a PMF over the same $H_d$ outcome.
 
 \section{Simulation and Reproducibility Protocol}
 \subsection{Data-generating process}
-Each of @@N_SEEDS@@ seeds generates @@N_TOTAL@@ patients. The first @@N_TRAIN@@ patients are used for training, @@N_VAL@@ are reserved as an untouched validation partition, and @@N_TEST@@ are used for final evaluation. Because all tuning choices in this analysis are prespecified, the validation partition is not consulted in the reported analysis. Each patient contributes @@N_DAYS@@ observed days. An additional @@FUTURE_DAYS@@ latent days are simulated solely to assess long-horizon interval coverage; no future observation enters fitting or prediction. The numerical PMF is calculated through day @@PMF_HORIZON@@, with all remaining mass stored in a $>@@PMF_HORIZON@@$ tail category.
+Each of @@N_SEEDS@@ seeds generates @@N_TOTAL@@ patients. The first @@N_TRAIN@@ patients are used for training, @@N_VAL@@ are reserved as an untouched validation partition, and @@N_TEST@@ are used for final evaluation. The validation partition was not used in the reported analysis; all settings used for the reported reconstruction are recorded in the archived configuration. Each patient contributes @@N_DAYS@@ observed days. An additional @@FUTURE_DAYS@@ latent days are simulated solely to assess long-horizon interval coverage; no future observation enters fitting or prediction. The numerical PMF is calculated through day @@PMF_HORIZON@@, with all remaining mass stored in a $>@@PMF_HORIZON@@$ tail category.
 
 The population transition matrix is
 \begin{equation}
@@ -352,7 +356,7 @@ Event-history & @@PAIR_HAZ@@\\
 
 
 \subsection{Non-current-flare sensitivity}\label{sec:noncurrent}
-The all-landmark analysis is the primary evaluation of the unconditional law because a patient may already be in flare and Equation~\eqref{eq:p0} represents that event at day zero. To show that the result is not driven only by this easily classified subset, we repeated the proper-score analysis after excluding all landmarks whose simulator state at day $d$ was Flare. This leaves @@N_NONCURRENT_ROWS@@ model--landmark rows. Table~\ref{tab:noncurrent} reports the two directly comparable HMMs. The no-draw-minus-draw differences were @@NONCURRENT_DIFF_NLL@@ (@@NONCURRENT_DIFF_NLL_CI@@) for censored log score and @@NONCURRENT_DIFF_IBS@@ (@@NONCURRENT_DIFF_IBS_CI@@) for mean Brier score. This sensitivity analysis is interpreted separately from the prespecified all-landmark primary estimand.
+The all-landmark analysis is the primary evaluation of the unconditional law because a patient may already be in flare and Equation~\eqref{eq:p0} represents that event at day zero. To show that the result is not driven only by this easily classified subset, we repeated the proper-score analysis after excluding all landmarks whose simulator state at day $d$ was Flare. This leaves @@N_NONCURRENT_ROWS@@ model--landmark rows. Table~\ref{tab:noncurrent} reports the two directly comparable HMMs. The no-draw-minus-draw differences were @@NONCURRENT_DIFF_NLL@@ (@@NONCURRENT_DIFF_NLL_CI@@) for censored log score and @@NONCURRENT_DIFF_IBS@@ (@@NONCURRENT_DIFF_IBS_CI@@) for mean Brier score. This sensitivity analysis is interpreted separately from the all-landmark primary estimand.
 
 \begin{table}[t]
 \caption{Sensitivity Excluding Current-Flare Landmarks}
@@ -457,6 +461,13 @@ The tagged release must satisfy the following assertions.
 \item The non-current-flare sensitivity analysis is generated from the same canonical landmark file and is reported separately from the all-landmark primary estimand.
 \end{enumerate}
 
+
+
+
+
+\section{Reproducibility}
+Versioned source code, complete predictive distributions, fitted model objects, generated tables and figures, and the locked computational environment are archived at Zenodo, DOI: 10.5281/zenodo.21971684 \cite{jasti2026code}. The corresponding source is available from GitHub release \texttt{time-to-flare-study-v2.2.0}.
+
 \balance
 \begin{thebibliography}{99}
 \bibitem{kemeny} J. G. Kemeny and J. L. Snell, \emph{Finite Markov Chains}. New York, NY, USA: Springer, 1976.
@@ -477,6 +488,7 @@ The tagged release must satisfy the following assertions.
 \bibitem{pandolfi2023} S. Pandolfi, F. Bartolucci, and F. Pennoni, ``A hidden Markov model for continuous longitudinal data with missing responses and dropout,'' \emph{Biometrical Journal}, vol. 65, no. 5, Art. no. e2200016, 2023, doi: 10.1002/bimj.202200016.
 \bibitem{hirten2021} R. P. Hirten et al., ``Longitudinal autonomic nervous system measures correlate with stress and ulcerative colitis disease activity and predict flare,'' \emph{Inflammatory Bowel Diseases}, vol. 27, no. 10, pp. 1576--1584, 2021.
 \bibitem{hirten2025} R. P. Hirten et al., ``Physiological data collected from wearable devices identify and predict inflammatory bowel disease flares,'' \emph{Gastroenterology}, vol. 168, no. 5, pp. 939--951.e5, 2025, doi: 10.1053/j.gastro.2024.12.024.
+\bibitem{jasti2026code} R. Jasti, ``A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials,'' version 2.2.0, Zenodo, 2026, doi: 10.5281/zenodo.21971684.
 \end{thebibliography}
 
 \end{document}

@@ -1,0 +1,57 @@
+--- a/ieeeaccess.cls
++++ b/ieeeaccess.cls
+@@ -5,8 +5,8 @@
+ 
+ \ifpdf
+  \pdfmapfile{+ t1-times.map}
+- \pdfmapfile{+ t1-formata.map}
+- \pdfmapfile{+ t1-giovannistd.map}
++ % [PATCHED] \pdfmapfile{+ t1-formata.map}
++ % [PATCHED] \pdfmapfile{+ t1-giovannistd.map}
+ \fi
+ 
+ \newif\iflineno\linenofalse
+@@ -57,17 +57,17 @@
+ 
+ % FormataOTF et al
+ \DeclareFontFamily{T1}{formata}{}
+-\DeclareFontShape{T1}{formata}{n}{n}{<->   t1-formata-regular}{}
+-\DeclareFontShape{T1}{formata}{n}{it}{<->  t1-formata-italic}{}
+-\DeclareFontShape{T1}{formata}{m}{n}{<->   t1-formata-medium}{}
+-\DeclareFontShape{T1}{formata}{m}{it}{<->  t1-formata-mediumitalic}{}
+-\DeclareFontShape{T1}{formata}{l}{n}{<->   t1-formata-light}{}
+-\DeclareFontShape{T1}{formata}{l}{it}{<->  t1-formata-lightitalic}{}
+-\DeclareFontShape{T1}{formata}{b}{n}{<->   t1-formata-bold}{}
+-\DeclareFontShape{T1}{formata}{b}{it}{<->  t1-formata-bolditalic}{}
+-\DeclareFontShape{T1}{formata}{cm}{n}{<->  t1-formata-condmedium}{}
+-\DeclareFontShape{T1}{formata}{cm}{it}{<-> t1-formata-condmediumital}{}
+-\DeclareFontShape{T1}{formata}{X}{n}{<->   t1-formata-regsymb}{}
++\DeclareFontShape{T1}{formata}{n}{n}{<-> ptmr8t}{}
++\DeclareFontShape{T1}{formata}{n}{it}{<-> ptmri8t}{}
++\DeclareFontShape{T1}{formata}{m}{n}{<-> ptmr8t}{}
++\DeclareFontShape{T1}{formata}{m}{it}{<-> ptmri8t}{}
++\DeclareFontShape{T1}{formata}{l}{n}{<-> ptmr8t}{}
++\DeclareFontShape{T1}{formata}{l}{it}{<-> ptmri8t}{}
++\DeclareFontShape{T1}{formata}{b}{n}{<-> ptmb8t}{}
++\DeclareFontShape{T1}{formata}{b}{it}{<-> ptmbi8t}{}
++\DeclareFontShape{T1}{formata}{cm}{n}{<-> ptmb8t}{}
++\DeclareFontShape{T1}{formata}{cm}{it}{<-> ptmbi8t}{}
++\DeclareFontShape{T1}{formata}{X}{n}{<-> ptmr8t}{}
+ 
+ \def\biosc#1{{\fontsize{5.5}{8}\selectfont\MakeUppercase{#1}}}
+ 
+@@ -187,11 +187,12 @@
+ 
+ % GiovanniStd
+ \DeclareFontFamily{T1}{giovannistd}{}
+-\DeclareFontShape{T1}{giovannistd}{n}{it}{<->   t1-giovannistd-bookitalic}{}
++\DeclareFontShape{T1}{giovannistd}{n}{it}{<-> ptmri8t}{}
+ 
+ \def\putfont#1#2#3#4#5#6{\usefont{#1}{#2}{#3}{#4}\fontsize{#5}{#6}\selectfont}
+ 
+-\font\symbfont=t1-formata-regsymb at 6pt
++% [PATCHED for local compile] Original: \font\symbfont=t1-formata-regsymb at 6pt
++\font\symbfont=ptmr8t at 6pt % substitute Times Roman for missing Formata symbol font
+ \AtBeginDocument{\gdef\copyright{{\symbfont\char'012}}}
+ \def\putfont#1#2#3#4#5#6{\usefont{#1}{#2}{#3}{#4}\fontsize{#5}{#6}\selectfont}
+ 
