@@ -32,3 +32,4 @@ build/
 # Never commit proprietary font binaries
 *.pfb
 Response_to_Reviewers_DRAFT.md
+*.bak

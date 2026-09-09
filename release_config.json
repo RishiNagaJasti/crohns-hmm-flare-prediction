@@ -1,7 +1,6 @@
 {
   "title": "A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials",
-  "software_version": "2.2.0",
-  "public_archive_doi": "PENDING_AUTHOR_DEPOSIT"
+  "software_version": "2.3.0",
+  "public_archive_doi": "10.5281/zenodo.21971684",
+  "release_mode": "candidate"
 }
-
-
