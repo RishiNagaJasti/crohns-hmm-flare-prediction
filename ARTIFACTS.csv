@@ -1,0 +1,51 @@
+artifact_id,path,role,storage,description
+manuscript_tex_template,manuscript_template.tex,source,git,LaTeX template with @@TOKEN@@ placeholders substituted at build time by fill_manuscript.py
+manuscript_tex_generated,Crohns_HMM_Time_to_Flare_Study.tex,manuscript,generated,Generated LaTeX manuscript with all tokens resolved; produced by fill_manuscript.py from manuscript_template.tex and final_outputs/
+manuscript_pdf,Crohns_HMM_Time_to_Flare_Study.pdf,manuscript,generated,Compiled manuscript PDF; produced by make paper
+figure1_source,fig1_graphicalmodel.tex,source,git,Standalone TikZ source for the graphical-model figure
+figure1_pdf,figures/fig1_graphicalmodel.pdf,figure,generated,Compiled standalone graphical-model figure; produced by make figure1
+figures_generated,figures/*.pdf,figure,generated,Compiled figures used by the manuscript (calibration_30d.pdf, coverage90.pdf, lambda_recovery.pdf, score_entropy.pdf, score_ibs4.pdf, score_nll.pdf, time_to_flare_interface.pdf); produced by generate_figures_from_outputs.py from final_outputs/
+pipeline_source,crohns_hmm_pipeline.py,source,git,Core simulation and estimation pipeline
+fill_manuscript_source,fill_manuscript.py,source,git,Substitutes tokens in manuscript template with values from final_outputs/ and release_config.json
+generate_figures_source,generate_figures_from_outputs.py,source,git,Regenerates figure PDFs from final_outputs/
+finalize_outputs_source,finalize_outputs.py,source,git,Post-processes per-seed pipeline outputs into aggregated final_outputs/
+build_manifest_source,build_manifest.py,source,git,Generates MANIFEST.sha256 from release-facing files
+build_release_metadata_source,build_release_metadata.py,source,git,Generates release_metadata.json with git provenance and release identity
+verify_release_source,verify_release.py,source,git,Mode-aware release verifier; enforces scientific checks and identity/provenance in candidate/submission modes
+tests_source,tests/test_pipeline.py,source,git,pytest unit tests for the pipeline
+makefile,Makefile,source,git,Orchestrates test, simulate, paper, metadata, manifest, verify targets
+dockerfile,Dockerfile,source,git,Reproducible container environment
+requirements_pinned,requirements.lock.txt,source,git,Exact pinned Python dependencies for deterministic reproduction
+requirements_loose,requirements.txt,source,git,Human-readable dependency list
+release_config,release_config.json,config,git,Single source of truth for software_version, public_archive_doi, release_mode
+release_metadata,release_metadata.json,metadata,generated,Release identity metadata (source_commit, release_tag, software_version, public_archive_doi); produced by build_release_metadata.py
+readme,README.md,documentation,git,Repository landing page
+license,LICENSE,documentation,git,MIT license
+citation,CITATION.cff,metadata,git,Machine-readable citation info per the Citation File Format
+reviewer_response_matrix,REVIEWER_RESPONSE_MATRIX.md,documentation,git,Point-by-point tracking of reviewer comments and responses
+implementation_summary,IMPLEMENTATION_AND_VERIFICATION_SUMMARY.md,documentation,git,High-level summary of the framework and verification approach
+reproducibility_guide,REPRODUCIBILITY_GUIDE.md,documentation,git,Step-by-step reproduction guide with acceptance tests
+template_build_note,TEMPLATE_BUILD_NOTE.md,documentation,git,Explains the vendor/ieeeaccess build workflow
+artifacts_csv,ARTIFACTS.csv,metadata,git,This file; enumerates every artifact the repository produces or claims
+font_patch,patches/ieeeaccess-font-fallback.patch,source,git,Font-fallback patch applied to IEEE Access template at build time (substitutes Times Roman for proprietary Formata and GiovanniStd fonts)
+vendor_checksums,vendor/ieeeaccess/UPSTREAM_SHA256.txt,metadata,git,SHA-256 checksums for IEEE Access template files the user must supply
+vendor_readme,vendor/ieeeaccess/UPSTREAM.md,documentation,git,Explains how to obtain and place the IEEE Access template archive
+manifest_sha256,MANIFEST.sha256,metadata,generated,SHA-256 of every file in the release archive; produced by build_manifest.py
+canonical_config,final_outputs/config.json,config,archive_only,Pipeline configuration used to produce the archived outputs
+canonical_env_manifest,final_outputs/environment_manifest.json,metadata,archive_only,Environment snapshot (Python version, package versions, thread counts) at the time of the archived run
+canonical_source_provenance,final_outputs/source_provenance.json,metadata,archive_only,Git commit and dirty-tree flag captured when the archived run was produced
+canonical_results,final_outputs/results.json,metadata,archive_only,Top-level summary metrics for the archived run
+canonical_landmarks,final_outputs/landmark_predictions.csv.gz,predictions,archive_only,All per-landmark predictions across every seed and model; primary result file
+canonical_patient_metrics,final_outputs/patient_metrics.csv,predictions,archive_only,Per-patient aggregate metrics across every seed and model
+canonical_pmf_tensors,final_outputs/prediction_distributions/seed_XX.npz,predictions,archive_only,"Per-seed PMF tensors: pmf, state_posterior, conditional_mean, unconditional_mean, event_full, model_names; one file per seed (00-09)"
+canonical_hmm_bases,"final_outputs/model_artifacts/seed_XX/{hmm_draw,hmm_no_draw,draw_stratified_hmm}_base.json",model_artifact,archive_only,Selected EM start for each HMM variant with start_diagnostics for all n_starts starts; one file per seed per variant
+canonical_hmm_ensembles,"final_outputs/model_artifacts/seed_XX/{hmm_draw,hmm_no_draw,draw_stratified_hmm}_ensemble.json",model_artifact,archive_only,Responsibility-weighted parameter-mixture ensembles for each HMM variant; one file per seed per variant
+canonical_event_history_bases,"final_outputs/model_artifacts/seed_XX/event_history_base.{json,pkl}",model_artifact,archive_only,Base fitted event-history logistic hazard model with feature names and scaler; one pair per seed
+canonical_event_history_ensembles,"final_outputs/model_artifacts/seed_XX/event_history_ensemble.{json,pkl}",model_artifact,archive_only,Patient-bootstrap ensemble of event-history models with resampling patient IDs per member; one pair per seed
+canonical_seed_landmarks,final_outputs/seed_results/seed_XX_landmarks.csv.gz,predictions,archive_only,Per-seed raw landmark predictions before aggregation; one file per seed
+canonical_seed_patient_metrics,final_outputs/seed_results/seed_XX_patient_metrics.csv,predictions,archive_only,Per-seed raw patient metrics before aggregation; one file per seed
+canonical_tables,final_outputs/tables/*.csv,table,archive_only,"Regenerated canonical tables (main_results_wide, paired_differences, performance_summary, noncurrent_flare_performance, noncurrent_flare_paired_differences, parameter_recovery, hitting_time_recovery, per-seed params); verified byte-identical against manuscript by verify_release.py"
+canonical_calibration_json,final_outputs/tables/calibration_30d.json,table,archive_only,30-day fixed-horizon calibration results with bootstrap intervals
+canonical_noncurrent_sensitivity_json,final_outputs/tables/noncurrent_flare_sensitivity.json,table,archive_only,Non-current-flare sensitivity analysis results
+canonical_figures,final_outputs/figures/*.pdf,figure,archive_only,Archived copies of all figures used by the manuscript; regeneratable from the archived model artifacts and predictions
+proprietary_fonts,vendor/ieeeaccess/*.pfb,font,excluded,Proprietary IEEE-distributed Formata and GiovanniStd font binaries; never committed or redistributed; font-fallback patch substitutes system Times Roman instead

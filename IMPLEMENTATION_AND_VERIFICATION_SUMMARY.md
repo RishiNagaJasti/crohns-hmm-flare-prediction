@@ -3,8 +3,8 @@
 ## Release identity
 
 - Source commit: recorded in `release_metadata.json`
-- Local release tag: `time-to-flare-study-v2.1.0`
-- Public archive DOI: `PENDING_AUTHOR_DEPOSIT`
+- Local release tag: `time-to-flare-study-v2.3.0`
+- Public archive DOI: `10.5281/zenodo.21971684` (reserved, not yet published)
 - Manuscript: `Crohns_HMM_Time_to_Flare_Study.pdf`
 - Exact source snapshot: `release_source.bundle`
 

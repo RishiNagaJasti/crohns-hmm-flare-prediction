@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials"
+authors:
+  - family-names: Jasti
+    given-names: Rishi
+    affiliation: North Carolina School of Science and Mathematics
+    orcid: "https://orcid.org/0009-0001-3986-8507"
+version: "2.3.0"
+doi: "10.5281/zenodo.21971684"
+date-released: "2026-09-09"
+url: "https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction"
+repository-code: "https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction"
+license: MIT
+type: software
+preferred-citation:
+  type: article
+  title: "A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study"
+  authors:
+    - family-names: Jasti
+      given-names: Rishi
+      affiliation: North Carolina School of Science and Mathematics
+      orcid: "https://orcid.org/0009-0001-3986-8507"
+  year: 2026
+  journal: "IEEE Access"

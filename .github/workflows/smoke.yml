@@ -1,0 +1,65 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [main, master, resubmission-*]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.lock.txt ]; then
+            pip install -r requirements.lock.txt
+          else
+            pip install -r requirements.txt
+          fi
+          pip install pytest pyyaml
+
+      - name: Deterministic thread environment
+        run: |
+          echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "NUMEXPR_NUM_THREADS=1" >> $GITHUB_ENV
+
+      - name: Run unit tests
+        run: |
+          python -m pytest -q tests/test_pipeline.py
+
+      - name: Run quick simulation subset
+        run: |
+          python crohns_hmm_pipeline.py --out quick_outputs --quick
+
+      - name: Verify release configuration and artifacts inventory
+        run: |
+          python -c "import json; c=json.load(open('release_config.json')); assert 'software_version' in c and 'release_mode' in c and 'public_archive_doi' in c, 'release_config.json missing required keys'; print('release_config.json OK: version={}, mode={}'.format(c['software_version'], c['release_mode']))"
+          python -c "import csv; rows=list(csv.DictReader(open('ARTIFACTS.csv'))); valid={'git','generated','archive_only','excluded'}; bad=[r['artifact_id'] for r in rows if r['storage'] not in valid]; assert not bad, 'ARTIFACTS.csv invalid storage: {}'.format(bad); print('ARTIFACTS.csv OK:', len(rows), 'rows')"
+          python -c "import yaml; y=yaml.safe_load(open('CITATION.cff')); assert y.get('cff-version') and y.get('title') and y.get('authors'), 'CITATION.cff malformed'; print('CITATION.cff OK: version={}, doi={}'.format(y.get('version'), y.get('doi')))"
+
+      - name: Verify ARTIFACTS.csv against tracked files
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from pathlib import Path
+          from verify_release import verify_artifacts_csv
+          verify_artifacts_csv(Path('.'))
+          print('ARTIFACTS.csv cross-check PASSED')
+          "
