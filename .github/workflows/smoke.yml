@@ -53,13 +53,49 @@ jobs:
           python -c "import csv; rows=list(csv.DictReader(open('ARTIFACTS.csv'))); valid={'git','generated','archive_only','excluded'}; bad=[r['artifact_id'] for r in rows if r['storage'] not in valid]; assert not bad, 'ARTIFACTS.csv invalid storage: {}'.format(bad); print('ARTIFACTS.csv OK:', len(rows), 'rows')"
           python -c "import yaml; y=yaml.safe_load(open('CITATION.cff')); assert y.get('cff-version') and y.get('title') and y.get('authors'), 'CITATION.cff malformed'; print('CITATION.cff OK: version={}, doi={}'.format(y.get('version'), y.get('doi')))"
 
-      - name: Verify ARTIFACTS.csv against tracked files
+      - name: Verify ARTIFACTS.csv git-tracked and excluded rows
         run: |
           python -c "
-          import sys
-          sys.path.insert(0, '.')
+          import csv
           from pathlib import Path
-          from verify_release import verify_artifacts_csv
-          verify_artifacts_csv(Path('.'))
-          print('ARTIFACTS.csv cross-check PASSED')
+          rows = list(csv.DictReader(open('ARTIFACTS.csv')))
+          problems = []
+          root = Path('.')
+          for row in rows:
+              aid = row['artifact_id']
+              rel_path = row['path']
+              storage = row['storage']
+              # CI only checks git and excluded storage classes.
+              # 'generated' and 'archive_only' require make paper / MANIFEST.sha256
+              # which are not produced in CI.
+              if storage == 'git':
+                  if '*' in rel_path or '{' in rel_path or 'seed_XX' in rel_path:
+                      import glob
+                      pattern = rel_path.replace('seed_XX', 'seed_00')
+                      if '{' in pattern:
+                          import re
+                          m = re.search(r'\{([^{}]+)\}', pattern)
+                          if m:
+                              pattern = pattern[:m.start()] + m.group(1).split(',')[0] + pattern[m.end():]
+                      if not glob.glob(pattern):
+                          problems.append(f'{aid}: git storage but pattern {pattern!r} matches nothing')
+                  elif not (root / rel_path).exists():
+                      problems.append(f'{aid}: git storage but file missing: {rel_path}')
+              elif storage == 'excluded':
+                  if '*' in rel_path:
+                      import glob
+                      if glob.glob(rel_path):
+                          problems.append(f'{aid}: excluded but files present: {rel_path}')
+          if problems:
+              print('ARTIFACTS.csv git/excluded inconsistencies:')
+              for p in problems:
+                  print(f'  {p}')
+              raise SystemExit(1)
+          git_count = sum(1 for r in rows if r['storage'] == 'git')
+          excl_count = sum(1 for r in rows if r['storage'] == 'excluded')
+          gen_count = sum(1 for r in rows if r['storage'] == 'generated')
+          arc_count = sum(1 for r in rows if r['storage'] == 'archive_only')
+          print(f'ARTIFACTS.csv CI cross-check PASSED')
+          print(f'  Verified in CI: {git_count} git + {excl_count} excluded rows')
+          print(f'  Deferred to local: {gen_count} generated + {arc_count} archive_only rows')
           "
