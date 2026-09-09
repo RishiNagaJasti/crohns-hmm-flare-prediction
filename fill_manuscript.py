@@ -32,6 +32,7 @@ def main() -> None:
 
     tpl = template.read_text()
     config = json.loads((outputs / "config.json").read_text())
+    release_config = json.loads((root / "release_config.json").read_text())
     wide = pd.read_csv(outputs / "tables" / "main_results_wide.csv").set_index("model")
     paired = pd.read_csv(outputs / "tables" / "paired_differences.csv")
     params = pd.read_csv(outputs / "tables" / "parameter_recovery.csv")
@@ -110,6 +111,9 @@ def main() -> None:
         "@@N_TRAIN@@": str(config["n_train"]),
         "@@N_VAL@@": str(config["n_val"]),
         "@@N_TEST@@": str(config["n_total"] - config["n_train"] - config["n_val"]),
+        "@@PUBLIC_ARCHIVE_DOI@@": release_config["public_archive_doi"],
+        "@@RELEASE_TAG@@": f"time-to-flare-study-v{release_config['software_version']}",
+        "@@SOFTWARE_VERSION@@": release_config["software_version"],
         "@@N_DAYS@@": str(config["n_days"]),
         "@@FUTURE_DAYS@@": str(config["future_days"]),
         "@@PMF_HORIZON@@": str(config["pmf_horizon"]),

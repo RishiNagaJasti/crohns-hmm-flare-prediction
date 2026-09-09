@@ -1,17 +1,24 @@
---- a/ieeeaccess.cls
-+++ b/ieeeaccess.cls
-@@ -5,8 +5,8 @@
+--- a/ieeeaccess.cls	2026-08-14 16:21:30
++++ b/ieeeaccess.cls	2026-09-05 17:05:00
+@@ -4,9 +4,9 @@
+ \RequirePackage{xkeyval}
  
  \ifpdf
-  \pdfmapfile{+ t1-times.map}
+- \pdfmapfile{+ t1-times.map}
 - \pdfmapfile{+ t1-formata.map}
 - \pdfmapfile{+ t1-giovannistd.map}
++ % [PATCHED] \pdfmapfile{+ t1-times.map}
 + % [PATCHED] \pdfmapfile{+ t1-formata.map}
 + % [PATCHED] \pdfmapfile{+ t1-giovannistd.map}
  \fi
  
  \newif\iflineno\linenofalse
-@@ -57,17 +57,17 @@
+@@ -53,21 +53,21 @@
+ 
+ %% Font definitions
+ 
+-\def\timesfont{times}%
++\def\timesfont{ptm}% [PATCHED] use Adobe Times instead of missing t1-times family
  
  % FormataOTF et al
  \DeclareFontFamily{T1}{formata}{}

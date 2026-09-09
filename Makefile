@@ -12,10 +12,14 @@ LATEXMK ?= latexmk
 # vendor/ieeeaccess/upstream/ holds the official package, byte-for-byte and
 # never edited.  The documented font-only compatibility change is applied to a
 # generated copy under build/ieeeaccess/, which is not committed.
-IEEE_UPSTREAM_DIR := vendor/ieeeaccess/upstream
+# IEEE Access template is NOT redistributed. The user must download it from
+# https://template-selector.ieee.org/ (search "IEEE Access", pick Research Article,
+# download LaTeX template) and place the zip at $(IEEE_ARCHIVE). Override with:
+#   make paper IEEE_ARCHIVE=/path/to/IEEE_LaTeX_Template.zip
+IEEE_ARCHIVE      ?= $(HOME)/Downloads/IEEE LaTeX Template.zip
+IEEE_CHECKSUMS    := vendor/ieeeaccess/UPSTREAM_SHA256.txt
 IEEE_BUILD_DIR    := build/ieeeaccess
 IEEE_PATCH        := patches/ieeeaccess-font-fallback.patch
-IEEE_CLASS        := $(IEEE_UPSTREAM_DIR)/ieeeaccess.cls
 IEEE_STAMP        := $(IEEE_BUILD_DIR)/.prepared
 
 # --- standalone Figure 1 -------------------------------------------------
@@ -48,10 +52,40 @@ simulate: environment
 
 ieeeaccess-assets: $(IEEE_STAMP)
 
-$(IEEE_STAMP): $(IEEE_CLASS) $(IEEE_PATCH)
+$(IEEE_STAMP): $(IEEE_CHECKSUMS) $(IEEE_PATCH)
+	@if [ ! -f "$(IEEE_ARCHIVE)" ]; then \
+	  echo "ERROR: IEEE Access template not found at:"; \
+	  echo "  $(IEEE_ARCHIVE)"; \
+	  echo ""; \
+	  echo "Download it from https://template-selector.ieee.org/"; \
+	  echo "  (search 'IEEE Access', pick Research Article, LaTeX template)"; \
+	  echo "and place the zip at the path above, or override with:"; \
+	  echo "  make paper IEEE_ARCHIVE=/path/to/IEEE_LaTeX_Template.zip"; \
+	  exit 1; \
+	fi
 	rm -rf $(IEEE_BUILD_DIR)
 	mkdir -p $(IEEE_BUILD_DIR)
-	cp -R $(IEEE_UPSTREAM_DIR)/. $(IEEE_BUILD_DIR)/
+	@echo "Extracting IEEE Access template from $(IEEE_ARCHIVE)"
+	unzip -j -q -o "$(IEEE_ARCHIVE)" \
+	  '*/ieeeaccess.cls' '*/spotcolor.sty' '*/*.png' \
+	  -d $(IEEE_BUILD_DIR)/ 2>/dev/null || \
+	unzip -j -q -o "$(IEEE_ARCHIVE)" \
+	  'ieeeaccess.cls' 'spotcolor.sty' '*.png' \
+	  -d $(IEEE_BUILD_DIR)/
+	@echo "Verifying SHA-256 checksums against $(IEEE_CHECKSUMS)"
+	@while read expected_sha rel_path; do \
+	  filename=$$(basename "$$rel_path"); \
+	  actual_sha=$$(shasum -a 256 "$(IEEE_BUILD_DIR)/$$filename" | awk '{print $$1}'); \
+	  if [ "$$actual_sha" != "$$expected_sha" ]; then \
+	    echo "ERROR: SHA mismatch for $$filename"; \
+	    echo "  expected: $$expected_sha"; \
+	    echo "  actual:   $$actual_sha"; \
+	    echo "The template archive at $(IEEE_ARCHIVE) may be a different version"; \
+	    echo "than the one this repository was built against. Re-download from"; \
+	    echo "https://template-selector.ieee.org/ or update $(IEEE_CHECKSUMS)."; \
+	    exit 1; \
+	  fi; \
+	done < $(IEEE_CHECKSUMS)
 	patch --batch --forward --directory=$(IEEE_BUILD_DIR) -p1 < $(abspath $(IEEE_PATCH))
 	touch $(IEEE_STAMP)
 
@@ -81,7 +115,7 @@ manifest: environment
 	$(PY) build_manifest.py --root $(ROOT) --output MANIFEST.sha256
 
 verify: environment
-	PYTHONPATH=$(ROOT) $(THREAD_ENV) $(PY) verify_release.py --root $(ROOT) --outputs $(OUT)
+	PYTHONPATH=$(ROOT) $(THREAD_ENV) $(PY) verify_release.py --root $(ROOT) --outputs $(OUT) --release-mode candidate
 
 reproduce: test simulate paper metadata manifest verify
 	@echo 'Full reproducibility build completed successfully.'

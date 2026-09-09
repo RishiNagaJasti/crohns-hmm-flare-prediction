@@ -1,4 +1,4 @@
-\documentclass[journal]{IEEEtran}
+\documentclass{ieeeaccess}
 \usepackage{amsmath,amssymb,mathtools,bm}
 \usepackage{booktabs,array,multirow}
 \usepackage{graphicx}
@@ -7,8 +7,6 @@
 \usepackage{url}
 \usepackage{microtype}
 \usepackage{balance}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,fit}
 \usepackage[hidelinks]{hyperref}
 \hypersetup{
   pdftitle={A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study},
@@ -27,10 +25,16 @@
 
 \title{A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study}
 
-\author{Rishi Jasti%
-\thanks{R. Jasti is with the North Carolina School of Science and Mathematics, Durham, NC, USA (e-mail: jasti27r@ncssm.edu).}}
+\author{\uppercase{Rishi Jasti}\authorrefmark{1}}
+\address[1]{North Carolina School of Science and Mathematics, Durham, NC 27705 USA (e-mail: jasti27r@ncssm.edu)}
+\tfootnote{}
+\markboth{Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
+{Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
 
 \begin{document}
+\history{Date of publication xxxx 00, 0000, date of current version xxxx 00, 0000.}
+\doi{10.1109/ACCESS.XXXX.XXXXXXX}
+
 \maketitle
 
 \begin{abstract}
@@ -116,17 +120,7 @@ If $\lambda_i>\lambda_j$, laboratory absence shifts posterior odds away from sta
 
 \begin{figure}[t]
 \centering
-\begin{tikzpicture}[>=Latex, node distance=9mm and 8mm, every node/.style={font=\footnotesize}]
-\node[draw,circle,minimum size=7mm] (s1) {$S_{d-1}$};
-\node[draw,circle,minimum size=7mm,right=of s1] (s2) {$S_d$};
-\node[draw,circle,minimum size=7mm,right=of s2] (s3) {$S_{d+1}$};
-\draw[->] (s1)--(s2); \draw[->] (s2)--(s3);
-\node[draw,rectangle,rounded corners,below=of s2] (w) {$Y_d^{(w)}$};
-\node[draw,rectangle,rounded corners,left=of w] (l) {$L_d$};
-\node[draw,rectangle,rounded corners,right=of w] (b) {$Y_d^{(\ell)}$ if $L_d=1$};
-\draw[->] (s2)--(w); \draw[->] (s2)--(l); \draw[->] (s2)--(b);
-\draw[->] (l)--(b);
-\end{tikzpicture}
+\includegraphics[width=0.8\linewidth]{fig1_graphicalmodel.pdf}
 \caption{Graphical structure at one landmark day. The draw indicator is observed and state-dependent; the laboratory-density term is included only when $L_d=1$.}
 \label{fig:graph}
 \end{figure}
@@ -466,7 +460,7 @@ The tagged release must satisfy the following assertions.
 
 
 \section{Reproducibility}
-Versioned source code, complete predictive distributions, fitted model objects, generated tables and figures, and the locked computational environment are archived at Zenodo, DOI: 10.5281/zenodo.21971684 \cite{jasti2026code}. The corresponding source is available from GitHub release \texttt{time-to-flare-study-v2.2.0}.
+Versioned source code, complete predictive distributions, fitted model objects, generated tables and figures, and the locked computational environment are archived at Zenodo, DOI: @@PUBLIC_ARCHIVE_DOI@@ \cite{jasti2026code}. The corresponding source is available from GitHub release \texttt{@@RELEASE_TAG@@}.
 
 \balance
 \begin{thebibliography}{99}
@@ -488,7 +482,13 @@ Versioned source code, complete predictive distributions, fitted model objects, 
 \bibitem{pandolfi2023} S. Pandolfi, F. Bartolucci, and F. Pennoni, ``A hidden Markov model for continuous longitudinal data with missing responses and dropout,'' \emph{Biometrical Journal}, vol. 65, no. 5, Art. no. e2200016, 2023, doi: 10.1002/bimj.202200016.
 \bibitem{hirten2021} R. P. Hirten et al., ``Longitudinal autonomic nervous system measures correlate with stress and ulcerative colitis disease activity and predict flare,'' \emph{Inflammatory Bowel Diseases}, vol. 27, no. 10, pp. 1576--1584, 2021.
 \bibitem{hirten2025} R. P. Hirten et al., ``Physiological data collected from wearable devices identify and predict inflammatory bowel disease flares,'' \emph{Gastroenterology}, vol. 168, no. 5, pp. 939--951.e5, 2025, doi: 10.1053/j.gastro.2024.12.024.
-\bibitem{jasti2026code} R. Jasti, ``A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials,'' version 2.2.0, Zenodo, 2026, doi: 10.5281/zenodo.21971684.
+\bibitem{jasti2026code} R. Jasti, ``A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials,'' version @@SOFTWARE_VERSION@@, Zenodo, 2026, doi: @@PUBLIC_ARCHIVE_DOI@@.
 \end{thebibliography}
+
+\begin{IEEEbiographynophoto}{Rishi Jasti}
+is a student researcher at the North Carolina School of Science and Mathematics, Durham, NC, USA. His research interests include probability theory, stochastic modeling, and simulation-based disease progression modeling.
+\end{IEEEbiographynophoto}
+
+\EOD
 
 \end{document}
