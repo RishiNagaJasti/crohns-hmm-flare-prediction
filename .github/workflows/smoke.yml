@@ -1,0 +1,101 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: [main, master, resubmission-*]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install pinned dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.lock.txt ]; then
+            pip install -r requirements.lock.txt
+          else
+            pip install -r requirements.txt
+          fi
+          pip install pytest pyyaml
+
+      - name: Deterministic thread environment
+        run: |
+          echo "OMP_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "OPENBLAS_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "MKL_NUM_THREADS=1" >> $GITHUB_ENV
+          echo "NUMEXPR_NUM_THREADS=1" >> $GITHUB_ENV
+
+      - name: Run unit tests
+        run: |
+          python -m pytest -q tests/test_pipeline.py
+
+      - name: Run quick simulation subset
+        run: |
+          python crohns_hmm_pipeline.py --out quick_outputs --quick
+
+      - name: Verify release configuration and artifacts inventory
+        run: |
+          python -c "import json; c=json.load(open('release_config.json')); assert 'software_version' in c and 'release_mode' in c and 'public_archive_doi' in c, 'release_config.json missing required keys'; print('release_config.json OK: version={}, mode={}'.format(c['software_version'], c['release_mode']))"
+          python -c "import csv; rows=list(csv.DictReader(open('ARTIFACTS.csv'))); valid={'git','generated','archive_only','excluded'}; bad=[r['artifact_id'] for r in rows if r['storage'] not in valid]; assert not bad, 'ARTIFACTS.csv invalid storage: {}'.format(bad); print('ARTIFACTS.csv OK:', len(rows), 'rows')"
+          python -c "import yaml; y=yaml.safe_load(open('CITATION.cff')); assert y.get('cff-version') and y.get('title') and y.get('authors'), 'CITATION.cff malformed'; print('CITATION.cff OK: version={}, doi={}'.format(y.get('version'), y.get('doi')))"
+
+      - name: Verify ARTIFACTS.csv git-tracked and excluded rows
+        run: |
+          python -c "
+          import csv
+          from pathlib import Path
+          rows = list(csv.DictReader(open('ARTIFACTS.csv')))
+          problems = []
+          root = Path('.')
+          for row in rows:
+              aid = row['artifact_id']
+              rel_path = row['path']
+              storage = row['storage']
+              # CI only checks git and excluded storage classes.
+              # 'generated' and 'archive_only' require make paper / MANIFEST.sha256
+              # which are not produced in CI.
+              if storage == 'git':
+                  if '*' in rel_path or '{' in rel_path or 'seed_XX' in rel_path:
+                      import glob
+                      pattern = rel_path.replace('seed_XX', 'seed_00')
+                      if '{' in pattern:
+                          import re
+                          m = re.search(r'\{([^{}]+)\}', pattern)
+                          if m:
+                              pattern = pattern[:m.start()] + m.group(1).split(',')[0] + pattern[m.end():]
+                      if not glob.glob(pattern):
+                          problems.append(f'{aid}: git storage but pattern {pattern!r} matches nothing')
+                  elif not (root / rel_path).exists():
+                      problems.append(f'{aid}: git storage but file missing: {rel_path}')
+              elif storage == 'excluded':
+                  if '*' in rel_path:
+                      import glob
+                      if glob.glob(rel_path):
+                          problems.append(f'{aid}: excluded but files present: {rel_path}')
+          if problems:
+              print('ARTIFACTS.csv git/excluded inconsistencies:')
+              for p in problems:
+                  print(f'  {p}')
+              raise SystemExit(1)
+          git_count = sum(1 for r in rows if r['storage'] == 'git')
+          excl_count = sum(1 for r in rows if r['storage'] == 'excluded')
+          gen_count = sum(1 for r in rows if r['storage'] == 'generated')
+          arc_count = sum(1 for r in rows if r['storage'] == 'archive_only')
+          print(f'ARTIFACTS.csv CI cross-check PASSED')
+          print(f'  Verified in CI: {git_count} git + {excl_count} excluded rows')
+          print(f'  Deferred to local: {gen_count} generated + {arc_count} archive_only rows')
+          "
