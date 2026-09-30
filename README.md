@@ -1,5 +1,7 @@
 # crohns-hmm-flare-prediction
 
+> **This branch holds the code of the original (v1.0) submission**, preserved unchanged under the tag `v1.0-ieee-access-submission`. That submission was rejected with an invitation to resubmit. The code for the resubmitted manuscript, *A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study*, is on the branch and tag [`resubmission-v2.3.0`](https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction/tree/resubmission-v2.3.0) and is archived at https://doi.org/10.5281/zenodo.21971684.
+
 Bayesian hidden Markov framework for time-to-flare estimation in Crohn's disease under endogenous laboratory sampling. **Simulation study.**
 
 This repository contains the code accompanying the paper *"A Bayesian Hidden Markov Framework for Time-to-Flare Estimation in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study"* (Jasti, 2026).
