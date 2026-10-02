@@ -474,7 +474,7 @@ def main() -> None:
     tex = (root / "Crohns_HMM_Time_to_Flare_Study.tex").read_text()
     assert "@@" not in tex
     for phrase in ["day-zero mass", "Draw-stratified-emission HMM",
-                   "training-cohort median", "Non-current-flare sensitivity",
+                   "training-cohort median", "Use of generative AI",
                    "complete PMF arrays"]:
         assert phrase in tex, f"expected phrase missing from generated TeX: {phrase!r}"
     assert re.search(r"HMM \+ draw model\s*&\s*[0-9]", tex)
@@ -501,7 +501,7 @@ def main() -> None:
         squash(subprocess.run(["pdftotext", *mode, str(pdf), "-"], capture_output=True,
                               text=True, check=True).stdout)
         for mode in ([], ["-raw"]))
-    for phrase in ["landmark-weighted censored log score", "stationary probability of Flare",
+    for phrase in ["makes the restricted log and Brier scores improper", "stationary probability of Flare",
                    "offer limited protection against that risk", "a large language model"]:
         assert squash(phrase) in pdf_squashed, f"compiled PDF is missing current text: {phrase!r}"
     assert pdf.stat().st_mtime >= (root / "Crohns_HMM_Time_to_Flare_Study.tex").stat().st_mtime, (

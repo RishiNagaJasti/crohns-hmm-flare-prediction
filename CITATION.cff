@@ -6,7 +6,7 @@ authors:
     given-names: Rishi
     affiliation: North Carolina School of Science and Mathematics
     orcid: "https://orcid.org/0009-0001-3986-8507"
-version: "2.3.0"
+version: "2.3.1"
 doi: "10.5281/zenodo.21971684"
 url: "https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction"
 repository-code: "https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction"
