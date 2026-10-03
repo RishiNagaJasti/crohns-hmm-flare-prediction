@@ -6,18 +6,18 @@ This repository contains the code, tests, and reproducibility materials accompan
 
 ## Release identity
 
-- **Version:** 2.3.1
-- **Release tag:** `resubmission-v2.3.1` (a git tag; no branch shares this name)
+- **Version:** 2.3.2
+- **Release tag:** `resubmission-v2.3.2` (a git tag; no branch shares this name)
 - **Public archive DOI:** 10.5281/zenodo.21971684
 
 ## Release history
 
 - **v1.0:** the original IEEE Access submission, which was rejected with an invitation to resubmit. Its code is preserved under the tag `v1.0-ieee-access-submission` (branch `main`).
-- **v2.3.1 (current):** the resubmission release (supersedes v2.3.0; the analysis code and numerical results are unchanged, and only the manuscript text and release metadata differ). The manuscript source in this repository is the source of the submitted PDF, and `make reproduce` rebuilds and verifies it end to end.
+- **v2.3.2 (current):** the resubmission release (supersedes v2.3.1 and v2.3.0; the analysis code and numerical results are unchanged, and only the manuscript text and release metadata differ). The manuscript source in this repository is the source of the submitted PDF, and `make reproduce` rebuilds and verifies it end to end.
 
 ## Reproduce the paper
 
-Check out the release tag first (`git checkout resubmission-v2.3.1`). There are two ways to reproduce the results:
+Check out the release tag first (`git checkout resubmission-v2.3.2`). There are two ways to reproduce the results:
 
 **Analysis only (no TeX or IEEE template needed):**
 
@@ -128,7 +128,7 @@ If you use the archived code and reproducibility materials, please also cite:
     @software{jasti2026code,
       author       = {Rishi Jasti},
       title        = {A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials},
-      version      = {2.3.1},
+      version      = {2.3.2},
       year         = {2026},
       publisher    = {Zenodo},
       doi          = {10.5281/zenodo.21971684}
