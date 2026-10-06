@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Independent release gate for the Crohn's HMM analysis package.
+"""Release gate for the Crohn's HMM analysis package (reruns the pipeline's aggregation code; not an independent reimplementation).
 
 Mode-aware. Two modes:
-  --release-mode candidate   Placeholder DOI expected; internal build.
-  --release-mode submission  Real Zenodo DOI required; consistent across
-                             release-facing files; optionally verified online.
+  --release-mode candidate   Placeholder or reserved (unpublished) DOI; internal build.
+  --release-mode submission  Final Zenodo DOI, pattern- and consistency-checked across
+                             release-facing files; --check-doi-online confirms it resolves.
 """
 from __future__ import annotations
 
@@ -355,11 +355,13 @@ def main() -> None:
     ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parent)
     ap.add_argument("--outputs", type=Path, default=Path("final_outputs"))
     ap.add_argument("--numbers-only", action="store_true",
-                    help="check the configuration and archives and regenerate every table from the "
-                         "archived landmark predictions, then stop; skips the TeX, PDF, release-tag, "
-                         "and manifest checks, so neither TeX nor the IEEE template is needed")
+                    help="check the configuration and archives and regenerate the results tables from the "
+                         "archived landmark and patient files, then stop; skips the TeX, PDF, artifact-inventory, "
+                         "release-identity/DOI, stale-version, and manifest checks (so --release-mode has no effect), "
+                         "and needs neither TeX nor the IEEE template")
     ap.add_argument("--release-mode", choices=("candidate", "submission"), required=True,
-                    help="candidate: placeholder DOI expected; submission: real DOI required")
+                    help="candidate: placeholder or reserved (unpublished) DOI; submission: final DOI, "
+                         "pattern- and consistency-checked (add --check-doi-online to confirm it resolves)")
     ap.add_argument("--check-doi-online", action="store_true",
                     help="in submission mode, also verify DOI resolves at doi.org")
     args = ap.parse_args()
@@ -460,6 +462,7 @@ def main() -> None:
         compare_csv(out / "tables" / "noncurrent_flare_paired_differences.csv", tmp / "tables" / "noncurrent_flare_paired_differences.csv", ["comparator", "metric"])
         compare_json(out / "tables" / "calibration_30d.json", tmp / "tables" / "calibration_30d.json")
         compare_json(out / "tables" / "noncurrent_flare_sensitivity.json", tmp / "tables" / "noncurrent_flare_sensitivity.json")
+        compare_json(out / "tables" / "noncurrent_flare_calibration_30d.json", tmp / "tables" / "noncurrent_flare_calibration_30d.json")
 
         if args.numbers_only:
             print("Numerical verification passed: configuration, archives, and every "
@@ -474,7 +477,7 @@ def main() -> None:
     tex = (root / "Crohns_HMM_Time_to_Flare_Study.tex").read_text()
     assert "@@" not in tex
     for phrase in ["day-zero mass", "Draw-stratified-emission HMM",
-                   "training-cohort median", "Use of generative AI",
+                   "training-cohort median", "Use of generative artificial intelligence (AI)",
                    "complete PMF arrays"]:
         assert phrase in tex, f"expected phrase missing from generated TeX: {phrase!r}"
     assert re.search(r"HMM \+ draw model\s*&\s*[0-9]", tex)
@@ -491,7 +494,7 @@ def main() -> None:
     for label, value in [("primary censored log score", f"{prop['nll']:.3f}"),
                          ("primary mean Brier score", f"{prop['ibs4']:.4f}")]:
         assert value in pdf_text, f"compiled PDF does not report the regenerated {label} {value}"
-    # Sentences that exist only in the current template: a PDF compiled from an
+    # Required sentences of the current template (together they occur in no earlier version): a PDF compiled from an
     # older source cannot contain them. Compare with hyphenation and spacing removed.
     squash = lambda t: re.sub(r"[^a-z0-9]", "", t.lower())
     # Column-aware extractions: the default and -raw modes each keep most column
@@ -502,7 +505,8 @@ def main() -> None:
                               text=True, check=True).stdout)
         for mode in ([], ["-raw"]))
     for phrase in ["makes the restricted log and Brier scores improper", "stationary probability of Flare",
-                   "weak evidence that EM avoided a poor local optimum", "a large language model"]:
+                   "weak evidence that EM avoided a poor local optimum", "a large language model",
+                   "no adjustment for multiple comparisons is applied"]:
         assert squash(phrase) in pdf_squashed, f"compiled PDF is missing current text: {phrase!r}"
     assert pdf.stat().st_mtime >= (root / "Crohns_HMM_Time_to_Flare_Study.tex").stat().st_mtime, (
         "compiled PDF is older than the generated TeX; rerun make paper")

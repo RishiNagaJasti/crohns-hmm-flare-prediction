@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONHASHSEED=0
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential git make latexmk texlive-latex-base texlive-latex-extra \
-    texlive-fonts-recommended texlive-pictures poppler-utils \
+    texlive-fonts-recommended texlive-pictures poppler-utils unzip texlive-publishers \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /work
 COPY requirements.lock.txt /work/requirements.lock.txt

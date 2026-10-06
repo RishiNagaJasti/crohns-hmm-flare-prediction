@@ -98,8 +98,8 @@ $(IEEE_STAMP): $(IEEE_CHECKSUMS)
 	    echo "  expected: $$expected_sha"; \
 	    echo "  actual:   $$actual_sha"; \
 	    echo "The template archive at $(IEEE_ARCHIVE) may be a different version"; \
-	    echo "than the one this repository was built against. Re-download from"; \
-	    echo "https://template-selector.ieee.org/ or update $(IEEE_CHECKSUMS)."; \
+	    echo "than the one this repository was built against. Download ACCESS_latex_template_20260513-1-1.zip,"; \
+	    echo "linked from https://ieeeaccess.ieee.org/authors/preparing-your-article/, or update $(IEEE_CHECKSUMS)."; \
 	    exit 1; \
 	  fi; \
 	done < $(IEEE_CHECKSUMS)
@@ -117,7 +117,7 @@ $(FIG1_PDF): $(FIG1_SRC) | $(FIG_DIR)
 paper: environment ieeeaccess-assets figure1
 	mkdir -p figures
 	cp $(OUT)/figures/*.pdf figures/
-	$(PY) fill_manuscript.py --root $(ROOT) --outputs $(OUT)
+	$(THREAD_ENV) $(PY) fill_manuscript.py --root $(ROOT) --outputs $(OUT)
 	command -v latexmk >/dev/null || { echo 'latexmk/TeX Live is required to build the PDF.'; exit 1; }
 	$(IEEE_TEX_ENV) \
 	  $(LATEXMK) -pdf -interaction=nonstopmode -halt-on-error Crohns_HMM_Time_to_Flare_Study.tex
@@ -134,20 +134,25 @@ manifest: environment
 verify: environment
 	PYTHONPATH=$(ROOT) $(THREAD_ENV) $(PY) verify_release.py --root $(ROOT) --outputs $(OUT) --release-mode $$($(PY) -c 'import json; print(json.load(open("release_config.json"))["release_mode"])')
 
-# Check everything the PDF and verification steps need before the long
-# simulation starts, so a missing prerequisite fails in seconds, not after it.
+# Check the main external tools and the IEEE template before the long simulation
+# starts, so a missing prerequisite fails in seconds, not after it. (make verify also
+# needs git and a clean checkout of the release tag; those are checked at the end.)
 preflight:
 	@if [ ! -f "$(IEEE_STAMP)" ] && [ ! -f "$(IEEE_ARCHIVE)" ]; then \
 	  echo "ERROR: IEEE Access template not found at: $(IEEE_ARCHIVE)"; \
 	  echo "Download it (see README) or pass IEEE_ARCHIVE=/path/to/template.zip."; \
-	  echo "To run the analysis and check every table without TeX or the template, use: make results"; \
+	  echo "To run the analysis and check the results tables without TeX or the template, use: make results"; \
 	  exit 1; \
 	fi
 	@command -v $(LATEXMK) >/dev/null || { echo "ERROR: latexmk (TeX Live) not found. Use 'make results' to run the analysis without building the PDF."; exit 1; }
 	@command -v pdftotext >/dev/null || { echo "ERROR: pdftotext (poppler) not found; 'make verify' needs it. Use 'make results' to run the analysis without it."; exit 1; }
+	@kpsewhich IEEEtran.cls >/dev/null || { echo "ERROR: IEEEtran.cls not found (Debian/Ubuntu: install texlive-publishers). Use 'make results' to run the analysis without it."; exit 1; }
+	@command -v unzip >/dev/null || { echo "ERROR: unzip not found; it is needed to extract the IEEE template. Use 'make results' to run the analysis without it."; exit 1; }
+	@command -v shasum >/dev/null || { echo "ERROR: shasum not found; it is needed to check the IEEE template files. Use 'make results' to run the analysis without it."; exit 1; }
 
-# Analysis only: tests, full simulation, and independent regeneration of every
-# table from the archived predictions. Needs no TeX and no IEEE template.
+# Analysis only: tests, full simulation, and regeneration of the performance,
+# paired-difference, calibration and non-current-flare tables by rerunning the
+# aggregation code on the archived outputs. Needs no TeX and no IEEE template.
 results: test simulate
 	PYTHONPATH=$(ROOT) $(THREAD_ENV) $(PY) verify_release.py --root $(ROOT) --outputs $(OUT) --numbers-only --release-mode $$($(PY) -c 'import json; print(json.load(open("release_config.json"))["release_mode"])')
 

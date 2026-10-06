@@ -4,8 +4,10 @@ The IEEE template itself is not redistributed in this repository. `make ieeeacce
 
 ## Rebuilding
 
-    make clean-build
+    rm -rf build/ieeeaccess
     make paper IEEE_ARCHIVE=/path/to/IEEE_LaTeX_Template.zip
+
+`make clean-build` also deletes `final_outputs/` and the committed Figure 1 PDF, so do not run it before `make verify`. `make clean-paper` also deletes the committed Figure 1 PDF. `make paper` rebuilds it, but the rebuilt file is not byte-identical, so restore the committed copy with `git checkout -- figures/fig1_graphicalmodel.pdf` before `make verify`, which requires a clean worktree.
 
 ## Auditing
 

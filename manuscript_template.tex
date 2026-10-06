@@ -10,9 +10,14 @@
 \usepackage[hidelinks]{hyperref}
 \hypersetup{
   pdftitle={A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: A Simulation Study},
-  pdfauthor={Rishi Jasti}
+  pdfauthor={Rishi Jasti},
+  pdfkeywords={Calibration, Crohn's disease, first-passage time, hidden Markov models, informative observation times, missing not at random, proper scoring rules, survival prediction}
 }
 \graphicspath{{figures/}}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\thebibliography}{\addcontentsline}{\phantomsection\addcontentsline}{}{}
+\makeatother
 \interdisplaylinepenalty=2500
 \newcommand{\R}{\mathrm{R}}
 \newcommand{\M}{\mathrm{M}}
@@ -20,6 +25,7 @@
 \newcommand{\given}{\,\middle|\,}
 \newcommand{\trans}{\mathsf T}
 \newcommand{\vect}[1]{\bm{#1}}
+\AtBeginDocument{\SetSymbolFont{NewLetters}{bold}{T1}{\timesfont}{b}{it}}
 \newcommand{\Prb}{\mathbb P}
 \newcommand{\E}{\mathbb E}
 
@@ -27,7 +33,7 @@
 
 \author{\uppercase{Rishi Jasti}\authorrefmark{1}}
 \address[1]{North Carolina School of Science and Mathematics, Durham, NC 27705 USA (e-mail: jasti27r@ncssm.edu)}
-\tfootnote{No external funding was received for this work. Text in all sections of this article was drafted with the assistance of Claude~\cite{claude}, a large language model; see the Acknowledgment.}
+\tfootnote{No external funding was received for this work. Text in all sections of this article was drafted with the assistance of Claude~\cite{claude}, a large language model; see the Acknowledgment. An earlier version of this work was posted on Cambridge Open Engage~\cite{jasti2026preprint}; its methods, results, and conclusions are superseded by this article; in particular, its conclusion that modeling state-dependent sampling materially improves flare prediction is not supported by the present analysis.}
 \markboth{Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
 {Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
 
@@ -37,7 +43,7 @@
 \corresp{Corresponding author: Rishi Jasti (e-mail: jasti27r@ncssm.edu).}
 
 \begin{abstract}
-I present a hidden Markov model (HMM) framework for longitudinal Crohn's disease monitoring with state-dependent laboratory sampling. The model combines daily Gaussian wearable summaries, intermittent log-normal laboratory biomarkers, and the laboratory-draw indicator in one likelihood; laboratory values contribute only on draw days. At each landmark, I distinguish an unconditional first-passage distribution with current-flare mass at day zero from a transient-conditional distribution whose mean, for any fixed parameter set, is bounded by that set's Remission- and Mild-state hitting-time means. Parameters are estimated without simulator state labels by Baum--Welch expectation maximization. A @@N_PARAM_MEMBERS@@-member responsibility-conditioned empirical-Bayes mixture propagates parameter variation; the event-history comparator uses a separate @@N_HAZARD_MEMBERS@@-member patient-bootstrap ensemble. Evaluation retains administratively censored landmarks and the probability tail beyond the observation window, using proper scores, calibration, coverage, and sharpness with seed- and patient-clustered uncertainty. Across @@N_SEEDS_WORD@@ independent simulations of @@N_TOTAL@@ patients each, the endogenous-sampling HMM obtained a censored log score of @@PROP_NLL@@ (95\% confidence interval @@PROP_NLL_CI@@), a four-horizon mean Brier score of @@PROP_IBS@@ (@@PROP_IBS_CI@@), and @@PROP_COV@@ coverage for nominal 90\% intervals. Comparator-minus-proposed differences for the otherwise identical HMM without the draw indicator were @@DIFF_NOLAM_NLL@@ in log score (@@DIFF_NOLAM_NLL_CI_ABS@@) and @@DIFF_NOLAM_IBS@@ in mean Brier score (@@DIFF_NOLAM_IBS_CI_ABS@@). The analysis supports the mathematical time-to-flare interface but does not establish a practically important gain from the draw indicator in this well-specified regime.
+I present a hidden Markov model framework for longitudinal Crohn's disease monitoring with state-dependent laboratory sampling. The model combines daily Gaussian wearable summaries, intermittent log-normal laboratory biomarkers, and the laboratory-draw indicator in one likelihood; laboratory values contribute only on draw days. At each landmark day, I distinguish an unconditional first-passage distribution with current-flare mass at day zero from a transient-conditional distribution whose mean, for any fixed parameter set, is bounded by that set's Remission- and Mild-state hitting-time means. Hidden Markov model parameters are estimated without simulator state labels by Baum--Welch expectation maximization. A @@N_PARAM_MEMBERS@@-member responsibility-conditioned empirical-Bayes mixture propagates parameter variation; the event-history comparator uses a separate @@N_HAZARD_MEMBERS@@-member patient-bootstrap ensemble. The censored log score retains administratively censored landmarks and the probability tail beyond the observation window; fixed-horizon Brier scores, calibration, coverage, and sharpness complete the evaluation, with seed- and patient-clustered uncertainty. Across @@N_SEEDS_WORD@@ independent simulations of @@N_TOTAL@@ patients (@@N_TEST@@ held-out test patients each), the endogenous-sampling hidden Markov model obtained a censored log score (lower is better) of @@PROP_NLL@@ (95\% confidence interval @@PROP_NLL_CI@@), a four-horizon mean Brier score of @@PROP_IBS@@ (@@PROP_IBS_CI@@), and @@PROP_COV@@ coverage for nominal 90\% intervals. Comparator-minus-proposed differences for the otherwise identical model without the draw indicator were @@DIFF_NOLAM_NLL@@ in log score (@@DIFF_NOLAM_NLL_CI_ABS@@) and @@DIFF_NOLAM_IBS@@ in mean Brier score (@@DIFF_NOLAM_IBS_CI_ABS@@). The time-to-flare interface can be estimated without oracle states and evaluated end to end, but the analysis does not establish a practically important gain from the draw indicator in this well-specified regime.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -47,16 +53,16 @@ Calibration, Crohn's disease, first-passage time, hidden Markov models, informat
 \maketitle
 
 \section{Introduction}
-\IEEEPARstart{C}{rohn's} disease is characterized by transitions among clinically quiescent, mildly active, and flare states. Wearable devices can provide dense physiological measurements, whereas laboratory biomarkers are comparatively accurate but intermittent. The timing of a laboratory panel can itself be informative: patients with greater disease activity may be sampled more often. A monitoring model should therefore use the draw indicator as an observation rather than treating every absent laboratory value as missing at random.
+\IEEEPARstart{C}{rohn's} disease follows a relapsing--remitting course, idealized here as transitions among clinically quiescent, mildly active, and flare states. Wearable devices can provide dense physiological measurements, whereas laboratory biomarkers are more direct measures of systemic inflammation but are available only intermittently. The timing of a laboratory panel can itself be informative: patients with greater disease activity may be sampled more often~\cite{lange2015}. A monitoring model can therefore use the laboratory-draw indicator (whether a panel was drawn that day) as an observation rather than treating every absent laboratory value as missing at random.
 
-A clinician-facing output should also be more explicit than a per-day flare score. At study day $d$, the relevant quantity is a distribution over the waiting time until the flare state is first occupied at or after the landmark. This waiting time is zero for a current flare; it is not the time to a new flare episode after recovery. A distinction arises when the current filter assigns positive probability to the flare state. The unconditional waiting-time law contains an atom at zero; the law conditional on not currently being in flare does not. Their means are different, and only the latter is constrained to lie between the state-specific transient hitting-time means.
+A clinician-facing output should also be more explicit than a per-day flare score. At study day $d$, the relevant quantity is a distribution over the waiting time until the flare state is first occupied on or after day $d$. This waiting time is zero for a current flare; it is not the time to a new flare episode after recovery. A distinction arises when the filtered state posterior assigns positive probability to the flare state. The unconditional waiting-time law contains an atom at zero; the law conditional on not currently being in flare does not. Their means differ whenever the flare posterior is strictly between zero and one, and, for any fixed parameter set, only the latter is constrained to lie between that set's state-specific transient hitting-time means.
 
 This study makes five contributions.
 \begin{enumerate}
-\item It specifies one coherent likelihood in which fresh daily wearable observations are Gaussian, laboratory biomarkers are log-normal when observed, and absent laboratory values never enter the emission density.
-\item It derives both the unconditional and transient-conditional first-passage distributions, including the day-zero mass and the finite-horizon survival tail.
-\item It fits the latent states by expectation maximization (EM) rather than using the simulator's true states, and it propagates parameter variation by a transparent responsibility-conditioned, equally weighted parameter mixture.
-\item It compares the endogenous-sampling hidden Markov model (HMM) with a no-draw-indicator HMM, a narrowly defined draw-stratified-emission HMM, and a discrete-time event-history model on the same time-to-flare output using censoring-aware proper scores and clustered uncertainty.
+\item It specifies one coherent likelihood in which daily wearable observations are Gaussian, laboratory biomarkers are log-normal when observed, and absent laboratory values never enter the emission density.
+\item It states, using standard absorbing-chain identities, both the unconditional and transient-conditional first-passage distributions (Section~\ref{sec:hitting}), including the day-zero mass and the finite-horizon survival tail.
+\item It estimates the hidden Markov model (HMM) parameters by expectation maximization (EM) without using the simulator's true states, and it propagates parameter variation by a transparent responsibility-conditioned, equally weighted parameter mixture.
+\item It compares the endogenous-sampling HMM with a no-draw HMM, a narrowly defined draw-stratified-emission HMM, and a supervised discrete-time event-history model trained with simulator flare labels, on the same time-to-flare output using censoring-aware proper scores and clustered uncertainty.
 \item It supplies a one-command reproducibility pipeline, complete probability mass function (PMF) archives, serialized HMM and event-history ensembles, generated tables and figures, acceptance tests of the core invariants, and a verification script that regenerates the reported result tables from the archived patient- and landmark-level outputs.
 \end{enumerate}
 
@@ -64,192 +70,29 @@ The scope is deliberately limited to a controlled simulation study. No claim of 
 
 \section{Related Work}
 \subsection{Informative observation and dropout}
-The distinction among missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) is foundational in longitudinal analysis \cite{little_rubin,daniels_hogan}. Diggle and Kenward gave an early selection-model treatment of informative dropout in longitudinal data \cite{diggle}. Informative dropout models commonly connect a longitudinal process and an event process through shared latent structure. Bartolucci and Farcomeni developed a discrete-time event-history extension of latent Markov models with informative dropout \cite{bartolucci2015}, and later a shared-parameter continuous-time hidden Markov and survival model \cite{bartolucci2019}. Marino and Alf\`o used finite mixtures of hidden Markov models to accommodate longitudinal responses subject to dropout \cite{marino2020}. Pandolfi, Bartolucci, and Pennoni considered a continuous-response HMM that accommodates intermittent missingness under a MAR assumption and informative dropout through an absorbing state \cite{pandolfi2023}. These works are directly relevant: they demonstrate how observation or dropout processes can share latent disease structure and how EM recursions can estimate the resulting models. Speekenbrink and Visser treated state-dependent missingness in hidden Markov models directly, letting the probability that an observation is missing depend on the hidden state so that missingness itself carries information about the state \cite{speekenbrink2025}; the $\lambda_i$ factor used here is an instance of that construction, applied to daily laboratory-panel occurrence alongside wearable channels observed every day. Lange et al.\ modeled a multistate disease process jointly with informative observation times, in which the timing of clinical encounters depends on the disease process \cite{lange2015}. State-dependent missingness is therefore not claimed here as a new contribution. The target of the present framework is a rolling first-passage prediction over time to flare, obtained by composing the filtered state posterior with the absorbing-chain fundamental matrix, rather than a study-dropout event or the disease-process parameters that are the target in \cite{lange2015}. The conceptual relationship to shared-parameter and event-history models is close and I do not claim otherwise; the contribution is the coherent combination of intermittent state-dependent laboratory observation and a first-passage clinical interface within a single filtering recursion.
+The distinction among missing completely at random (MCAR), missing at random (MAR), and missing not at random (MNAR) is foundational in longitudinal analysis \cite{little_rubin,daniels_hogan}. Diggle and Kenward gave an early selection-model treatment of informative dropout in longitudinal data \cite{diggle}. Informative dropout models commonly connect a longitudinal process and an event process through shared latent structure. Bartolucci and Farcomeni developed a discrete-time event-history extension of latent Markov models with informative dropout \cite{bartolucci2015}, and later a shared-parameter continuous-time hidden Markov and survival model \cite{bartolucci2019}. Marino and Alf\`o used finite mixtures of hidden Markov models to accommodate longitudinal responses subject to dropout \cite{marino2020}. Pandolfi, Bartolucci, and Pennoni considered a continuous-response HMM that accommodates intermittent missingness under a MAR assumption and informative dropout through an absorbing state \cite{pandolfi2023}. The latent Markov works~\cite{bartolucci2015,bartolucci2019,marino2020,pandolfi2023} are directly relevant: they show how dropout processes can share latent structure with the longitudinal outcome and how EM recursions can estimate the resulting models. Speekenbrink and Visser treated state-dependent missingness in hidden Markov models directly, letting the probability that an observation is missing depend on the hidden state so that missingness itself carries information about the state \cite{speekenbrink2025}; the state-dependent draw probability $\lambda_i$ used here (Section~\ref{sec:likelihood}) is an instance of that construction, applied to daily laboratory-panel occurrence alongside wearable channels observed every day. Lange \emph{et al.}\ modeled a multistate disease process jointly with informative observation times, in which the timing of clinical encounters depends on the disease process \cite{lange2015}. State-dependent missingness is therefore not claimed here as a new contribution. The target of the present framework is a rolling first-passage prediction over time to flare, obtained by propagating the filtered state posterior through the transient block of the absorbing chain, rather than a study-dropout event or the disease-process parameters that are the target in \cite{lange2015}. The conceptual relationship to shared-parameter and event-history models is close and I do not claim otherwise; what is added here is the combination of a standard discrete-time filter under state-dependent laboratory observation with the complete first-passage distribution, including its day-zero mass and finite-horizon tail, evaluated with censoring-aware proper scores; Section~\ref{sec:hiddenstate} contrasts this with an absorption-probability risk score from earlier disease-progression work.
 
-Mechanically, the Bernoulli draw process is modeled at every day and enters the HMM emission likelihood alongside the wearable and observed laboratory factors, so information from a lab-absent day still updates the posterior through the $1-\lambda_i$ term.
+Mechanically, the Bernoulli draw process is modeled on every day and enters the HMM emission likelihood alongside the wearable and observed laboratory factors, so information from a lab-absent day still updates the posterior through the $1-\lambda_i$ term.
 
-\subsection{Hidden-state disease progression and first-passage prediction}
-Forward--backward filtering and Baum--Welch estimation are classical HMM methods \cite{rabiner,cappe}. Absorbing Markov-chain identities provide exact first-passage distributions and means through the transient matrix $Q$ and fundamental matrix $(I-Q)^{-1}$ \cite{kemeny}. Joint longitudinal--event modeling connects evolving biomarkers to event times through shared structure \cite{tsiatis}, while threshold-regression work treats event times as first passage of a stochastic process to a boundary \cite{lee_whitmore}. Related disease-progression work has used hidden-state and semi-Markov models to represent clinical deterioration and absorption risk \cite{alaa} and continuous-time disease progression \cite{liu_cthmm}. Alaa et al.~\cite{alaa} model clinical observation times as a marked Hawkes process modulated by the latent state, addressing the informative-observation phenomenon that motivates the $\lambda_i$ factor here, and compose the forward-filtered state posterior with absorption probabilities of the latent process. The present framework instead works in discrete time and targets the complete first-passage distribution, including its day-zero mass and finite-horizon tail, evaluated with censoring-aware proper scores.
+\subsection{Hidden-state disease progression and first-passage prediction}\label{sec:hiddenstate}
+Forward filtering, forward--backward smoothing, and Baum--Welch estimation are classical HMM methods \cite{rabiner,cappe}. Absorbing Markov-chain identities provide exact first-passage distributions and means through the transient block of the transition matrix and the associated fundamental matrix \cite{kemeny}. Joint longitudinal--event modeling connects evolving biomarkers to event times through shared structure \cite{tsiatis}, whereas threshold-regression work treats event times as first passage of a stochastic process to a boundary \cite{lee_whitmore}. Related disease-progression work has used hidden-state and semi-Markov models to represent clinical deterioration and absorption risk \cite{alaa} and continuous-time disease progression \cite{liu_cthmm}. Alaa \emph{et al.}~\cite{alaa} model clinical observation times as a marked Hawkes process modulated by the latent state, addressing the informative-observation phenomenon that motivates the $\lambda_i$ factor here, and compute a risk score that composes the forward-filtered state posterior with the probability of eventual absorption in the clinical-deterioration state, although, when scoring test episodes, they do not use observation times to infer the latent state. The present framework instead works in discrete time and targets the complete first-passage distribution, including its day-zero mass and finite-horizon tail, evaluated with censoring-aware proper scores.
 
 \subsection{Evaluation of probabilistic event-time forecasts}
-A predictive distribution should be evaluated by proper scoring rules, calibration, and sharpness rather than by discrimination alone. The Brier score has a standard survival-data extension \cite{graf1999}, and Gneiting and Raftery provide the general theory of proper scores and the calibration--sharpness principle \cite{gneiting2007}. Area under the receiver operating characteristic curve (AUROC) remains useful for the secondary question of current-state classification, but it does not evaluate the claimed time-to-flare distribution. Longitudinal wearable studies have also reported autonomic changes associated with inflammatory-bowel-disease activity and physiological changes preceding flares \cite{hirten2021,hirten2025}; those findings motivate the monitoring setting but do not constitute validation of the present simulation model.
+A predictive distribution should be evaluated by proper scoring rules, calibration, and sharpness rather than by discrimination alone. The Brier score has a standard survival-data extension~\cite{graf1999}, and Gneiting and Raftery provide the general theory of proper scores and restate the principle of maximizing sharpness subject to calibration \cite{gneiting2007}. Area under the receiver operating characteristic curve (AUROC) remains useful for the secondary question of current-state classification, but it does not evaluate the claimed time-to-flare distribution. Longitudinal wearable studies have also reported autonomic changes associated with ulcerative colitis activity \cite{hirten2021} and physiological changes preceding inflammatory bowel disease flares \cite{hirten2021,hirten2025}; those findings motivate the monitoring setting but do not constitute validation of the present simulation model.
 
 \section{Model}
 \subsection{Latent dynamics and observations}
-Let $S_d\in\mathcal S=\{\R,\M,\F\}$ denote the latent disease state on day $d$. The physiological process is a time-homogeneous Markov chain with initial distribution $\vect{\eta}$ and transition matrix $P=(P_{ij})$. The flare state is not physiologically absorbing; it is made absorbing only within the landmark-specific first-passage calculation of Section~\ref{sec:hitting}.
+Let $S_d\in\mathcal S=\{\R,\M,\F\}$ denote the latent disease state on day $d$, where $\R$, $\M$, and $\F$ denote Remission, Mild, and Flare. The physiological process is a time-homogeneous Markov chain with initial distribution $\vect{\eta}$ and transition matrix $P=(P_{ij})$, where $P_{ij}=\Prb(S_{d+1}=j\mid S_d=i)$. The flare state is not physiologically absorbing; it is made absorbing only within the landmark-specific first-passage calculation of Section~\ref{sec:hitting}.
 
-Each day produces a wearable vector $Y_d^{(w)}\in\mathbb R^p$, a laboratory-draw indicator $L_d\in\{0,1\}$, and, when $L_d=1$, a positive laboratory vector $Y_d^{(\ell)}\in\mathbb R_+^q$. The observed tuple is
+Each day produces a vector $Y_d^{(w)}\in\mathbb R^p$ of daily channels, a laboratory-draw indicator $L_d\in\{0,1\}$, and, when $L_d=1$, a positive laboratory vector $Y_d^{(\ell)}\in\mathbb R_+^q$; here $p=q=3$ (Table~\ref{tab:emissions}). The three daily channels (temperature, resting heart rate, and a stool-frequency proxy) are called wearable channels for brevity, although stool frequency would in practice be patient-reported. The observed tuple is
 \begin{equation}
-O_d=\left(Y_d^{(w)},L_d,L_dY_d^{(\ell)}\right).
+O_d=\left(Y_d^{(w)},L_d,L_dY_d^{(\ell)}\right),
 \end{equation}
-Days are indexed from zero: $d\in\{0,1,\ldots,D-1\}$ for a $D$-day observation window, so that the remaining observed follow-up at landmark $d$ is $C_d=D-1-d$. The filtration $\mathcal F_d=\sigma(O_0,\ldots,O_d)$ contains only information available through day $d$.
-
-\subsection{Coherent observation likelihood}
-Conditional on $S_d=i$, the wearable channels are independent Gaussian summaries,
-\begin{equation}
-Y_d^{(w)}\mid S_d=i\sim\mathcal N(\vect{\mu}_i^{(w)},\operatorname{diag}[(\vect{\sigma}_i^{(w)})^2]),
-\end{equation}
-the draw indicator is Bernoulli,
-\begin{equation}
-L_d\mid S_d=i\sim\operatorname{Bernoulli}(\lambda_i),
-\end{equation}
-and each positive laboratory channel is log-normal when observed,
-\begin{equation}
-\log Y_d^{(\ell)}\mid(S_d=i,L_d=1)
-\sim\mathcal N(\vect{\nu}_i,\operatorname{diag}(\vect{\tau}_i^2)).
-\end{equation}
-The complete day-$d$ emission factor is
-\begin{align}
- b_i(O_d)&=\phi_p\!\left(Y_d^{(w)};\vect{\mu}_i^{(w)},\vect{\sigma}_i^{(w)}\right)
- \lambda_i^{L_d}(1-\lambda_i)^{1-L_d} \notag\\
- &\quad\times\left[f_{\mathrm{LN}}\!\left(Y_d^{(\ell)};\vect{\nu}_i,\vect{\tau}_i\right)\right]^{L_d}.
- \label{eq:emission}
-\end{align}
-Figure~\ref{fig:graph} shows the resulting graphical structure. Thus, when $L_d=0$, the laboratory-density factor equals one. No forward-filled laboratory value is evaluated in the HMM likelihood. Last-observation-carried-forward values are used only as causal covariates in the separate event-history comparator.
-
-\subsection{Filtering under endogenous sampling}
-Let $\vect{\eta}$ denote the initial state distribution, with $\pi_{0\mid -1}=\vect{\eta}$. Equation~\eqref{eq:predict} applies for $d\ge 1$, and Equation~\eqref{eq:update} applies from $d=0$. Let $\pi_d(i)=\Prb(S_d=i\mid\mathcal F_d)$. The prediction and update are
-\begin{align}
-\pi_{d\mid d-1}(i)&=\sum_{j\in\mathcal S}\pi_{d-1}(j)P_{ji}\label{eq:predict},\\
-\pi_d(i)&=\frac{b_i(O_d)\pi_{d\mid d-1}(i)}{\sum_{k\in\mathcal S}b_k(O_d)\pi_{d\mid d-1}(k)}\label{eq:update}.
-\end{align}
-On a lab-absent day, posterior odds between states $i$ and $j$ contain the factor
-\begin{equation}
-\frac{1-\lambda_i}{1-\lambda_j}.
-\end{equation}
-If $\lambda_i>\lambda_j$, laboratory absence shifts posterior odds away from state $i$. When all $\lambda_i$ are equal, the factor cancels and the model reduces to the no-draw-indicator HMM.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.8\linewidth]{fig1_graphicalmodel.pdf}
-\caption{Graphical structure at one landmark day. The draw indicator is observed and state-dependent; the laboratory-density term is included only when $L_d=1$.}
-\label{fig:graph}
-\end{figure}
-
-\section{First-Passage Prediction}\label{sec:hitting}
-At every landmark day $d$, define the rolling waiting time
-\begin{equation}
-H_d=\inf\{n\ge 0:S_{d+n}=\F\}.
-\end{equation}
-For the first-passage calculation, reorder the states as $(\R,\M,\F)$ and replace the flare row by an absorbing row. Write
-\begin{equation}
-P^*=\begin{pmatrix}Q&\vect{r}\\\vect{0}^{\trans}&1\end{pmatrix},
-\qquad N=(I-Q)^{-1}.
-\end{equation}
-Assume $\rho(Q)<1$, so the flare state is eventually reached from either transient state and $N=(I-Q)^{-1}$ is well defined. Here $Q$ is the $2\times2$ transient block and $\vect{r}$ is the transient-to-flare column. Let
-\begin{equation}
-\vect{q}_d=(\pi_d(\R),\pi_d(\M))^{\trans}.
-\end{equation}
-
-\subsection{Unconditional law}
-The complete landmark-specific distribution is
-\begin{align}
-\Prb(H_d=0\mid\mathcal F_d)&=\pi_d(\F),\label{eq:p0}\\
-\Prb(H_d=n\mid\mathcal F_d)&=\vect{q}_d^{\trans}Q^{n-1}\vect{r},
-\quad n\ge1,\label{eq:pn}\\
-\Prb(H_d>h\mid\mathcal F_d)&=\vect{q}_d^{\trans}Q^h\vect{1}.\label{eq:tail}
-\end{align}
-The final expression is retained as a tail category in every finite numerical PMF. In particular, the @@N_DAYS@@-day observation horizon is never used to renormalize the predictive distribution.
-
-The unconditional mean is
-\begin{equation}
-\E(H_d\mid\mathcal F_d)=\vect{q}_d^{\trans}N\vect{1}.
-\label{eq:uncondmean}
-\end{equation}
-This mean can approach zero because it is multiplied implicitly by the posterior probability of still being in a transient state.
-
-\subsection{Conditional law given no current flare}
-When $\vect{q}_d^{\trans}\vect{1}>0$, the transient-conditional mean is
-\begin{equation}
-\E(H_d\mid\mathcal F_d,S_d\in\{\R,\M\})
-=\frac{\vect{q}_d^{\trans}N\vect{1}}{\vect{q}_d^{\trans}\vect{1}}.
-\label{eq:condmean}
-\end{equation}
-Let $m_{\R}=(N\vect{1})_{\R}$ and $m_{\M}=(N\vect{1})_{\M}$. Equation~\eqref{eq:condmean} is a convex combination of $m_{\R}$ and $m_{\M}$, so
-\begin{align}
-\min(m_{\R},m_{\M})
-&\le \E(H_d\mid\mathcal F_d,S_d\in\{\R,\M\}) \notag\\
-&\le\max(m_{\R},m_{\M}).
-\label{eq:bound}
-\end{align}
-Proofs of Equations~\eqref{eq:uncondmean} and~\eqref{eq:bound} are given in Appendix~\ref{app:proofs}. The conditional mean is mathematically undefined whenever the transient posterior mass is exactly zero. In the numerical implementation I additionally suppress the conditional mean and display it as a gap when the transient mass falls at or below $10^{-8}$; by Equation~\eqref{eq:bound} the ratio itself remains bounded as the transient mass decreases, but when the patient is almost certainly in flare it carries no practical information. The choice between ``undefined'' and ``suppressed below threshold'' is definitional, not a change to the underlying joint prediction: the unconditional law $\Prb(H_d=n\mid\mathcal F_d)$ and the day-zero mass $\Prb(H_d=0\mid\mathcal F_d)$ are unaffected.
-
-\subsection{Parameter-mixture predictive law}
-For parameter draws $\theta^{(0)},\ldots,\theta^{(B)}$, where $\theta^{(0)}$ is the EM estimate and $B=@@N_PARAM_DRAWS@@$ (Section~\ref{sec:paramunc}), the reported PMF is
-\begin{equation}
-\widehat p_d(n)=\frac{1}{B+1}\sum_{b=0}^{B}
- p_{\theta^{(b)}}(H_d=n\mid\mathcal F_d),
-\end{equation}
-with the filtering recursion and first-passage transformation recomputed for every draw. This can widen the predictive distribution when transition, emission, or sampling parameters are uncertain. The transient-conditional mean of the mixture is formed after marginalizing over draws, as the ratio of the draw-averaged numerator and denominator of Equation~\eqref{eq:condmean}. Equation~\eqref{eq:bound} holds for each member. Because the mixture mean is a weighted average of the member conditional means, with weights proportional to each member's transient posterior mass, it lies between the smallest and largest member hitting-time means; it need not lie between $m_{\R}$ and $m_{\M}$ of the EM estimate alone.
-
-\section{Latent-State Estimation and Comparators}
-\subsection{Baum--Welch estimation}
-The main HMM is fit without access to simulator state labels. For training patient $p$, the forward--backward recursions produce
-\begin{align}
-\gamma_{pd}(i)&=\Prb(S_{pd}=i\mid O_{p,0:D-1}),\\
-\xi_{pd}(i,j)&=\Prb(S_{pd}=i,S_{p,d+1}=j\mid O_{p,0:D-1}).
-\end{align}
-Transition-count sums run over $d=0,\ldots,D-2$, while emission sums run over $d=0,\ldots,D-1$.
-
-The principal M-step updates are
-\begin{align}
-\widehat P_{ij}&=
-\frac{\sum_{p,d}\xi_{pd}(i,j)+\alpha_{ij}}
-{\sum_{p,d}\sum_k\xi_{pd}(i,k)+\sum_k \alpha_{ik}},\label{eq:Pupdate}\\
-\widehat\lambda_i&=
-\frac{\sum_{p,d}\gamma_{pd}(i)L_{pd}+\alpha_i}
-{\sum_{p,d}\gamma_{pd}(i)+\alpha_i+\beta_i},\label{eq:lamupdate}\\
-\widehat{\vect{\nu}}_i&=
-\frac{\sum_{p,d}\gamma_{pd}(i)L_{pd}\log Y_{pd}^{(\ell)}}
-{\sum_{p,d}\gamma_{pd}(i)L_{pd}},\label{eq:labupdate}
-\end{align}
-with analogous responsibility-weighted updates for Gaussian wearable means and variances and log-laboratory variances. Weak pseudocounts ($\alpha_{ij}=0.5$ for transitions and $\alpha_i=\beta_i=1$ for draw rates) prevent zero transition and draw probabilities. Initialization uses $K$-means on standardized training wearables; labels are re-sorted after every EM iteration and every parameter draw by increasing wearable-severity score, not by true states. The M-step also uses small numerical safeguards: a 0.5 pseudocount on the initial distribution, standard-deviation floors, laboratory updates only when a state's total draw-day responsibility exceeds 0.2, and draw rates clipped to $[10^{-4},1-10^{-4}]$. The observed-data log likelihood determines convergence: iteration stops when its change is at most @@EM_TOL@@ times one plus its absolute value, or after @@MAX_EM_ITER@@ iterations; at least three iterations are run.
-
-\subsection{Parameter uncertainty}\label{sec:paramunc}
-At the final EM solution, responsibility-weighted expected counts are used to construct a reproducible empirical-Bayes approximation. Initial and transition probabilities are drawn from Dirichlet distributions based on expected counts; draw rates are drawn from beta distributions based on expected draw and non-draw counts; independent Gaussian/log-Gaussian means and scales are drawn from weakly regularized normal--scaled-chi-square approximations. @@N_PARAM_DRAWS_WORD_CAP@@ draws plus the EM estimate are used for each HMM, for @@N_PARAM_MEMBERS@@ mixture members per model. Each primary HMM fit uses @@N_STARTS_WORD@@ observable-data initializations and retains every likelihood trace and selection diagnostic. This procedure propagates parameter variation but conditions on the final EM responsibilities; it is therefore not claimed to be an exact fully Bayesian posterior.
-
-\subsection{Comparators}
-Four models produce a PMF over the same $H_d$ outcome.
-\begin{enumerate}
-\item \emph{HMM + draw model}: Equation~\eqref{eq:emission}, including $\lambda_i^{L_d}(1-\lambda_i)^{1-L_d}$.
-\item \emph{HMM without draw model}: the same latent dynamics and value emissions, but the Bernoulli draw factor is omitted.
-\item \emph{Draw-stratified-emission HMM}: wearable emission parameters are stratified by the currently observed draw status $L_d=0$ versus $L_d=1$, while one transition matrix and one filtered posterior are retained. As in the no-draw HMM, the Bernoulli draw factor is omitted, so draw status enters only through the stratified wearable parameters. This is a deliberately narrow selection-pattern comparator rather than a claim to represent every pattern-mixture formulation. Because the required posterior and transition matrix exist, Equations~\eqref{eq:p0}--\eqref{eq:tail} are applied directly.
-\item \emph{Discrete-time event-history model}: a supervised comparator with two logistic components, both fit on training-set landmarks, taken every @@HAZARD_STRIDE_ORD@@ day, with ground-truth flare labels. Both components share the following landmark covariates: current wearables, seven-day wearable means and slopes, the draw indicator, last observed log-laboratory values, time since the last panel, and an explicit indicator that a first laboratory panel has become available. The hazard input additionally uses the lead-time basis defined below. Before a patient's first panel, log-laboratory features use the training-cohort median rather than a generating parameter. Both logistic components are $\ell_2$-regularized (inverse-strength $C=1.0$ for the current-state logistic, $C=0.5$ for the hazard logistic). The current-state logistic predicts the probability $g_0(x_d)$ that the patient is in Flare on the current day. The hazard logistic predicts a first flare at lead day $n$, conditional on remaining flare-free through lead day $n-1$ and not being in flare at the landmark:
-\[
-g_h(x_d, n) = \Prb(H_d = n \mid H_d \ge n,\ S_d \neq \F,\ x_d).
-\]
-Let $H_{\mathrm{train}} = @@HAZARD_HORIZON@@$ denote the training-horizon scale and $K = @@PMF_HORIZON@@$ the prediction-grid horizon. The hazard time basis is $\bigl(\log(1+n),\ \sqrt{n}/10,\ n/H_{\mathrm{train}}\bigr)$; it is extrapolated beyond the training horizon up to $K$. For each ensemble member and $1 \le n \le K$,
-\[
-\widehat p_d(0) = g_0(x_d),
-\]
-\[
-\widehat p_d(n) = [1 - g_0(x_d)]\, g_h(x_d, n) \prod_{k=1}^{n-1}[1 - g_h(x_d, k)],
-\]
-\[
-\widehat p_d(> K) = [1 - g_0(x_d)] \prod_{k=1}^{K}[1 - g_h(x_d, k)].
-\]
-Hazards are clipped to $[10^{-5}, 1-10^{-5}]$; by construction each row sums to one over the tail-inclusive grid, and a final normalization only removes floating-point rounding. Each fitted base component is accompanied by @@N_HAZARD_DRAWS@@ patient-bootstrap refits, giving @@N_HAZARD_MEMBERS@@ equally weighted members per component; ensemble predictions are the arithmetic mean of member PMFs. Only information available through day $d$ enters prediction; training labels are used only in fitting, never at inference.
-\end{enumerate}
-
-\section{Simulation and Reproducibility Protocol}
-\subsection{Data-generating process}
-Each of @@N_SEEDS@@ seeds generates @@N_TOTAL@@ patients. The first @@N_TRAIN@@ patients are used for training, @@N_VAL@@ are reserved as an untouched validation partition, and @@N_TEST@@ are used for final evaluation. The validation partition was not used in the reported analysis; all settings used for the reported reconstruction are recorded in the archived configuration. Each patient contributes @@N_DAYS@@ observed days. An additional @@FUTURE_DAYS@@ latent days are simulated solely to assess long-horizon interval coverage; no future observation enters fitting or prediction. The numerical PMF is calculated through day @@PMF_HORIZON@@, with all remaining mass stored in a $>@@PMF_HORIZON@@$ tail category.
-
-The population transition matrix is
-\begin{equation}
-P=\begin{pmatrix}
-@@TRUE_P_ROWS@@
-\end{pmatrix},
-\label{eq:trueP}
-\end{equation}
-which gives generating transient means of $@@TRUE_MEAN_R@@$ days from Remission and $@@TRUE_MEAN_M@@$ days from Mild after making flare absorbing. State-dependent laboratory-draw probabilities are
-\begin{equation}
-(\lambda_{\R},\lambda_{\M},\lambda_{\F})=(@@TRUE_LAMBDA@@).
-\end{equation}
-Table~\ref{tab:emissions} lists the generating emission parameters and initial-state probabilities. Fresh wearable noise is generated independently on every patient-day. A laboratory panel is either jointly observed or jointly absent. This regime is deliberately flare-rich rather than calibrated to clinical flare frequencies: the stationary probability of Flare under Equation~\eqref{eq:trueP} is @@STAT_FLARE@@, and @@EVENT30_RATE@@ of test landmarks with complete 30-day follow-up reach Flare within 30 days; since even from Remission every EM-fitted chain reaches Flare within 30 days with probability near 0.6 or more, every HMM 30-day risk lies between @@HMM_RISK30_MIN@@ and 1.
+where $L_dY_d^{(\ell)}$ denotes $Y_d^{(\ell)}$ when $L_d=1$ and is absent when $L_d=0$.
+Days are indexed from zero: $d\in\{0,1,\ldots,D-1\}$ for a $D$-day observation window, and every observed day $d$ is a landmark, that is, a day on which a prediction is issued; the remaining observed follow-up at landmark $d$ is $C_d=D-1-d$. The filtration $\mathcal F_d=\sigma(O_0,\ldots,O_d)$ contains only information available through day $d$.
 
 \begin{table}[t]
-\caption{Generating emission parameters. Daily nonlaboratory channels are temperature ($^\circ$C), resting heart rate (HR, beats per minute), and a stool-frequency proxy (continuous scale approximating stools per day). The stool-frequency channel is a Gaussian continuous proxy, not an integer-valued count model. Laboratory channels are C-reactive protein (CRP, mg/L), erythrocyte sedimentation rate (ESR, mm/h), and white blood cell count (WBC, $\times 10^9$/L). Laboratory values are log-normal; medians and log-scale standard deviations are shown. SD denotes standard deviation.}
+\caption{Generating Emission Parameters and Initial-State Probabilities}
 \label{tab:emissions}
 \centering
 \footnotesize
@@ -261,52 +104,195 @@ State & Temperature & Resting HR & Stool frequency\\
 \midrule
 @@TABLE1_WEAR_ROWS@@
 \midrule
- & CRP & ESR & WBC\\
+State & CRP & ESR & WBC\\
  & median (log-SD) & median (log-SD) & median (log-SD)\\
 @@TABLE1_LAB_ROWS@@
 \midrule
-State & \multicolumn{3}{c}{Initial-state probability $\eta$}\\
+State & \multicolumn{3}{c}{Initial-state probability $\vect{\eta}$}\\
 @@TABLE1_ETA_ROWS@@
 \bottomrule
 \end{tabular}
+\begin{flushleft}\scriptsize Daily non-laboratory channels are temperature ($^\circ$C), resting heart rate (HR, beats per minute), and a stool-frequency proxy (a Gaussian continuous scale approximating stools per day, not a count model). Laboratory channels are C-reactive protein (CRP, mg/L), erythrocyte sedimentation rate (ESR, mm/h), and white blood cell count (WBC, $\times 10^9$/L). Laboratory values are log-normal; medians and log-scale standard deviations are shown. SD denotes standard deviation. Values are illustrative and were not fitted to clinical data.\end{flushleft}
 \end{table}
 
-\subsection{Censoring-aware evaluation}
-For landmark $d$, let $C_d=D-1-d$ be the remaining observed follow-up. If a flare is observed after $h_d\le C_d$ days, the censored logarithmic score is $-\log\widehat p_d(h_d)$. If no flare is observed before administrative censoring, the score is
+\subsection{Coherent observation likelihood}\label{sec:likelihood}
+Conditional on $S_d=i$, the wearable channels are independent Gaussian summaries,
 \begin{equation}
--\log\Prb(H_d>C_d\mid\mathcal F_d),
+Y_d^{(w)}\mid S_d=i\sim\mathcal N(\vect{\mu}_i^{(w)},\operatorname{diag}((\vect{\sigma}_i^{(w)})^2)),
 \end{equation}
-using the unrenormalized survival tail. Thus, patients without a flare inside @@N_DAYS@@ days remain in the analysis.
-
-For $h\in\{7,14,30,60\}$, the fixed-horizon Brier score uses landmarks with complete $h$-day follow-up,
+the draw indicator is Bernoulli,
 \begin{equation}
-\operatorname{BS}(h)=\frac1{N_h}\sum_{d:C_d\ge h}
-\left[\widehat F_d(h)-\bm1\{H_d\le h\}\right]^2,
+L_d\mid S_d=i\sim\operatorname{Bernoulli}(\lambda_i),
 \end{equation}
-where $\widehat F_d(h)=\sum_{n=0}^{h}\widehat p_d(n)$ is the predicted probability of a flare within $h$ days and $N_h$ is the number of the patient's landmarks with $C_d\ge h$; the score is computed for each patient and then averaged across patients. The reported four-horizon mean is the average of the four Brier scores. Thirty-day calibration is displayed graphically and summarized by slopes from a numerically ridge-stabilized logistic calibration model including an intercept. Slope confidence intervals use the hierarchical seed--patient bootstrap. Equal-tailed 90\% interval coverage is assessed against the separately simulated future latent path, with the $>@@PMF_HORIZON@@$ tail retained as an observed outcome category; predictive entropy is the primary sharpness summary. AUROC for current flare status is secondary.
+and each positive laboratory channel is log-normal when observed,
+\begin{equation}
+\log Y_d^{(\ell)}\mid(S_d=i,L_d=1)
+\sim\mathcal N(\vect{\nu}_i,\operatorname{diag}(\vect{\tau}_i^2)).
+\end{equation}
+Conditional on $S_d$, the wearable vector is independent of $(L_d,Y_d^{(\ell)})$, and $O_d$ is independent of the states and observations of all other days, so the complete day-$d$ emission factor is
+\begin{align}
+ b_i(O_d)&=\phi_p\!\left(Y_d^{(w)};\vect{\mu}_i^{(w)},\vect{\sigma}_i^{(w)}\right)
+ \lambda_i^{L_d}(1-\lambda_i)^{1-L_d} \notag\\
+ &\quad\times\left[f_{\mathrm{LN}}\!\left(Y_d^{(\ell)};\vect{\nu}_i,\vect{\tau}_i\right)\right]^{L_d}.
+ \label{eq:emission}
+\end{align}
+Here $\phi_p$ denotes the product of $p$ univariate normal densities with means $\vect{\mu}_i^{(w)}$ and standard deviations $\vect{\sigma}_i^{(w)}$, and $f_{\mathrm{LN}}$ denotes the product of $q$ univariate log-normal densities whose logarithms have means $\vect{\nu}_i$ and standard deviations $\vect{\tau}_i$. Because the laboratory-density factor carries the exponent $L_d$, it equals one when $L_d=0$. Fig.~\ref{fig:graph} shows the resulting graphical structure. No forward-filled laboratory value is evaluated in the HMM likelihood. Last-observation-carried-forward values are used only as causal covariates in the separate event-history comparator.
 
-For performance intervals, the bootstrap first resamples seeds and then resamples patients within selected seeds, preserving every repeated landmark for a selected patient. Paired model differences are calculated at matched seed--patient pairs before the same hierarchical bootstrap. The main performance intervals use @@PERFORMANCE_BOOTSTRAP@@ replicates; calibration intervals use @@CALIBRATION_BOOTSTRAP@@ replicates. The primary estimand includes every landmark, including a current flare represented by the explicit day-zero mass. Of the test landmarks, @@CURRENT_FLARE_FRACTION@@ are current-flare landmarks. Scores restricted to landmarks without a current flare are not reported: selecting landmarks on the realized current state, which is part of the predicted outcome, makes the restricted log and Brier scores improper for the unconditional law.
+\subsection{Filtering under endogenous sampling}
+Let $\pi_d(i)=\Prb(S_d=i\mid\mathcal F_d)$ and $\pi_{d\mid d-1}(i)=\Prb(S_d=i\mid\mathcal F_{d-1})$, with $\mathcal F_{-1}$ trivial, so that $\pi_{0\mid -1}(i)=\eta_i$. The prediction step \eqref{eq:predict} applies for $d\ge 1$, and the update step \eqref{eq:update} applies from $d=0$:
+\begin{align}
+\pi_{d\mid d-1}(i)&=\sum_{j\in\mathcal S}\pi_{d-1}(j)P_{ji}\label{eq:predict},\\
+\pi_d(i)&=\frac{b_i(O_d)\pi_{d\mid d-1}(i)}{\sum_{k\in\mathcal S}b_k(O_d)\pi_{d\mid d-1}(k)}\label{eq:update}.
+\end{align}
+On a lab-absent day, posterior odds between states $i$ and $j$ contain the factor
+\begin{equation}
+\frac{1-\lambda_i}{1-\lambda_j}.
+\end{equation}
+If $\lambda_i>\lambda_j$, then, for the same one-step predictive distribution $\pi_{d\mid d-1}$ and value-emission parameters, laboratory absence multiplies the posterior odds of state $i$ against state $j$ by a factor below one, relative to an update without the draw factor (Appendix~\ref{app:contraction}). When all $\lambda_i$ are equal, the factor cancels and the model reduces to the HMM without the draw factor.
 
-\subsection{Reproducibility}
-The accompanying package contains the exact configuration, fixed seeds, complete PMF arrays for every test landmark and model, all fitted HMM bases and parameter-mixture members, all event-history coefficients, scalers and bootstrap members, EM likelihood traces, landmark-level summaries, patient-level metrics, generated figures and tables, an exact environment description, and a one-command build. A release metadata file records the source snapshot and the immutable release tag \texttt{@@RELEASE_TAG@@}. The code and reproducibility materials are archived on Zenodo \cite{jasti2026code}. Code and text were drafted with Claude~\cite{claude} and verified by the author (sections listed in the Acknowledgment). The command
-\begin{verbatim}
-make reproduce
-\end{verbatim}
-runs the tests, simulation, estimation, and evaluation in the locked environment and regenerates the results tables and figures. The source code is available at \url{https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction}. Appendix~\ref{app:protocol} gives the required reproducibility sequence, Appendix~\ref{app:tests} lists the acceptance tests, and Appendix~\ref{app:repro} describes the archive.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\linewidth]{fig1_graphicalmodel.pdf}
+\caption{Graphical structure on one day $d$. Circles denote latent states and rounded rectangles observed quantities. The draw indicator is observed and state-dependent; the laboratory-density term is included only when $L_d=1$.}
+\label{fig:graph}
+\end{figure}
 
-\section{Results}
-\subsection{Clinical time-to-flare interface}
-Figure~\ref{fig:interface} displays a held-out trajectory under the seed-level base HMM; the main performance tables use the full parameter mixture. The displayed patient is the first patient, in a separately simulated cohort not used for fitting, whose first flare onset falls between days 35 and 90. The transient-conditional curve remains within the fitted Remission/Mild hitting-time range whenever it is displayed. The unconditional mean falls toward zero when posterior flare mass approaches one because Equation~\eqref{eq:p0} assigns that mass to $H_d=0$.
+\section{First-Passage Prediction}\label{sec:hitting}
+At every landmark day $d$, define the rolling waiting time
+\begin{equation}
+H_d=\inf\{n\ge 0:S_{d+n}=\F\}.
+\end{equation}
+For the first-passage calculation, with the states ordered $(\R,\M,\F)$, replace the flare row by an absorbing row. Write
+\begin{equation}
+P^*=\begin{pmatrix}Q&\vect{r}\\\vect{0}^{\trans}&1\end{pmatrix},
+\qquad N=(I-Q)^{-1}.
+\end{equation}
+Here $Q$ is the $2\times2$ transient block, $\vect{r}$ is the transient-to-flare column, $I$ is the identity matrix, $\rho(\cdot)$ denotes spectral radius, and $\vect{0}$ and $\vect{1}$ are vectors of zeros and ones. Assume $\rho(Q)<1$, so the flare state is eventually reached from either transient state and $N=(I-Q)^{-1}$ is well defined. Let
+\begin{equation}
+\vect{q}_d=(\pi_d(\R),\pi_d(\M))^{\trans}.
+\end{equation}
+
+\subsection{Unconditional law}
+From standard absorbing-chain identities~\cite{kemeny}, the complete landmark-specific distribution is
+\begin{align}
+\Prb(H_d=0\mid\mathcal F_d)&=\pi_d(\F),\label{eq:p0}\\
+\Prb(H_d=n\mid\mathcal F_d)&=\vect{q}_d^{\trans}Q^{n-1}\vect{r},
+\quad n\ge1,\label{eq:pn}\\
+\Prb(H_d>h\mid\mathcal F_d)&=\vect{q}_d^{\trans}Q^h\vect{1},
+\quad h\ge0.\label{eq:tail}
+\end{align}
+The final expression is retained as a tail category in every finite numerical PMF. In particular, the $D$-day observation window ($D=@@N_DAYS@@$; Section~\ref{sec:simulation}) is never used to renormalize the predictive distribution.
+
+The unconditional mean is
+\begin{equation}
+\E(H_d\mid\mathcal F_d)=\vect{q}_d^{\trans}N\vect{1}.
+\label{eq:uncondmean}
+\end{equation}
+This mean can approach zero because it is multiplied implicitly by the posterior probability of still being in a transient state (Fig.~\ref{fig:interface}, middle).
+
+\subsection{Conditional law given no current flare}
+When $\vect{q}_d^{\trans}\vect{1}>0$, the transient-conditional law is
+\[
+\Prb(H_d=n\mid\mathcal F_d,S_d\in\{\R,\M\})
+=\frac{\vect{q}_d^{\trans}Q^{n-1}\vect{r}}{\vect{q}_d^{\trans}\vect{1}},\quad n\ge1,
+\]
+and its mean is
+\begin{equation}
+\E(H_d\mid\mathcal F_d,S_d\in\{\R,\M\})
+=\frac{\vect{q}_d^{\trans}N\vect{1}}{\vect{q}_d^{\trans}\vect{1}}.
+\label{eq:condmean}
+\end{equation}
+Let $m_{\R}=(N\vect{1})_{\R}$ and $m_{\M}=(N\vect{1})_{\M}$ denote the mean hitting times of the flare state from Remission and Mild. The right-hand side of \eqref{eq:condmean} is a convex combination of $m_{\R}$ and $m_{\M}$, so
+\begin{align}
+\min(m_{\R},m_{\M})
+&\le \E(H_d\mid\mathcal F_d,S_d\in\{\R,\M\}) \notag\\
+&\le\max(m_{\R},m_{\M}).
+\label{eq:bound}
+\end{align}
+Proofs of~\eqref{eq:uncondmean} and~\eqref{eq:bound} are given in Appendix~\ref{app:proofs}. The conditional mean is mathematically undefined whenever the transient posterior mass is exactly zero. In the numerical implementation I additionally suppress the conditional mean and display it as a gap when the transient mass (for the parameter mixture, the member-averaged transient mass) falls at or below $10^{-8}$; by \eqref{eq:bound}, applied to each mixture member, the ratio itself remains bounded as the transient mass decreases, but when the patient is almost certainly in flare it carries no practical information. The choice between ``undefined'' and ``suppressed below threshold'' is definitional, not a change to the underlying joint prediction: the unconditional law $\Prb(H_d=n\mid\mathcal F_d)$ and the day-zero mass $\Prb(H_d=0\mid\mathcal F_d)$ are unaffected.
+
+\subsection{Parameter-mixture predictive law}
+For mixture members $\theta^{(0)},\ldots,\theta^{(B)}$, each a complete HMM parameter set (initial distribution, transition matrix, state-specific emission parameters and, for the endogenous-sampling (draw) model, the laboratory-draw probabilities), where $\theta^{(0)}$ is the EM estimate and $\theta^{(1)},\ldots,\theta^{(B)}$ are $B=@@N_PARAM_DRAWS@@$ parameter draws (Section~\ref{sec:paramunc}), the reported PMF is
+\begin{equation}
+\widehat p_d(n)=\frac{1}{B+1}\sum_{b=0}^{B}
+ p_{\theta^{(b)}}(H_d=n\mid\mathcal F_d),
+\end{equation}
+with the filtering recursion and first-passage transformation recomputed for every mixture member. This can widen the predictive distribution when transition, emission, or sampling parameters are uncertain. The transient-conditional mean of the mixture is formed after marginalizing over mixture members, as the ratio of the member-averaged numerator and denominator of \eqref{eq:condmean}. The bound \eqref{eq:bound} holds for each member. Because the mixture mean is a weighted average of the member conditional means, with weights proportional to each member's transient posterior mass, it lies between the smallest and largest member hitting-time means; it need not lie between $m_{\R}$ and $m_{\M}$ of the EM estimate alone, and in the reported runs it often does not.
+
+\section{Latent-State Estimation and Comparators}\label{sec:estimation}
+\subsection{Baum--Welch estimation}
+Every HMM (the proposed model and both HMM comparators) is fit without access to simulator state labels. For training patient $u$, the forward--backward recursions produce
+\begin{align}
+\gamma_{ud}(i)&=\Prb(S_{ud}=i\mid O_{u,0:D-1}),\\
+\xi_{ud}(i,j)&=\Prb(S_{ud}=i,S_{u,d+1}=j\mid O_{u,0:D-1}).
+\end{align}
+Transition-count sums run over $d=0,\ldots,D-2$, whereas emission sums run over $d=0,\ldots,D-1$.
+
+The principal M-step updates are
+\begin{align}
+\widehat P_{ij}&=
+\frac{\sum_{u,d}\xi_{ud}(i,j)+\alpha_{ij}}
+{\sum_{u,d}\sum_k\xi_{ud}(i,k)+\sum_k \alpha_{ik}},\label{eq:Pupdate}\\
+\widehat\lambda_i&=
+\frac{\sum_{u,d}\gamma_{ud}(i)L_{ud}+\alpha_i}
+{\sum_{u,d}\gamma_{ud}(i)+\alpha_i+\beta_i},\label{eq:lamupdate}\\
+\widehat{\vect{\nu}}_i&=
+\frac{\sum_{u,d}\gamma_{ud}(i)L_{ud}\log Y_{ud}^{(\ell)}}
+{\sum_{u,d}\gamma_{ud}(i)L_{ud}},\label{eq:labupdate}
+\end{align}
+with analogous responsibility-weighted updates for Gaussian wearable means and variances and log-laboratory variances. Weak pseudocounts ($\alpha_{ij}=0.5$ for transitions and $\alpha_i=\beta_i=1$ for draw rates) prevent zero transition and draw probabilities. Initialization uses $k$\nobreakdash-means on standardized training wearables; labels are re-sorted after every EM iteration and every parameter draw by increasing wearable-severity score (the mean, over channels, of each state's fitted wearable means standardized across states; for the draw-stratified-emission HMM, the means are first averaged over the two draw strata), not by true states. Among the $k$\nobreakdash-means starts (Section~\ref{sec:paramunc}), the fit with the highest final observed-data log likelihood is retained. The M-step also uses small numerical safeguards: a 0.5 pseudocount on the initial distribution, standard-deviation floors, laboratory and draw-stratified wearable updates only when the corresponding total responsibility exceeds 0.2, and draw rates clipped to $[10^{-4},1-10^{-4}]$. Because of these pseudocounts and safeguards, the procedure is a lightly penalized, safeguarded variant of EM. The observed-data log likelihood determines convergence: iteration stops when its change is at most @@EM_TOL@@ times one plus the absolute value of the previous log likelihood, or after @@MAX_EM_ITER@@ iterations; at least three iterations are run.
+
+\subsection{Parameter uncertainty}\label{sec:paramunc}
+At the final EM solution, responsibility-weighted expected counts are used to construct a reproducible empirical-Bayes approximation. Initial and transition probabilities are drawn from Dirichlet distributions based on expected counts; laboratory-draw rates are sampled from beta distributions based on expected draw-day and non-draw-day counts; channel-wise independent Gaussian/log-Gaussian means and scales are sampled from normal--scaled-inverse-$\chi^2$ approximations weakly regularized toward the EM estimate. @@N_PARAM_DRAWS_WORD_CAP@@ draws plus the EM estimate are used for each HMM, for @@N_PARAM_MEMBERS@@ mixture members per model. Each base EM fit uses @@N_STARTS_WORD@@ $k$\nobreakdash-means initializations, which differ only in the $k$\nobreakdash-means random seed, and retains every likelihood trace and selection diagnostic. This procedure propagates parameter variation but conditions on the final EM responsibilities; it is therefore not claimed to be an exact fully Bayesian posterior.
+
+\subsection{Comparators}
+Four models produce a PMF over the same $H_d$ outcome.
+\begin{enumerate}
+\item \emph{HMM + draw model} (the proposed endogenous-sampling HMM, also called the draw model): emission factor \eqref{eq:emission}, including $\lambda_i^{L_d}(1-\lambda_i)^{1-L_d}$.
+\item \emph{HMM without draw model} (the no-draw HMM): the same latent dynamics and value emissions, but the Bernoulli draw factor is omitted.
+\item \emph{Draw-stratified-emission HMM}: wearable emission parameters are stratified by the currently observed draw status $L_d=0$ versus $L_d=1$, whereas one transition matrix and one filtered posterior are retained. As in the no-draw HMM, the Bernoulli draw factor is omitted, so, beyond determining whether a laboratory density is evaluated (as in every HMM here), draw status enters only through the stratified wearable parameters. This is a deliberately narrow pattern-stratified comparator rather than a claim to represent every pattern-mixture formulation. Because the required posterior and transition matrix exist, \eqref{eq:p0}--\eqref{eq:tail} are applied directly.
+\item \emph{Discrete-time event-history model}: a supervised comparator with two logistic components, both fit on training-set landmarks, taken every @@HAZARD_STRIDE_ORD@@ day (to bound the size of the person-period data set), with ground-truth flare labels. Hazard training rows use only latent states inside the @@N_DAYS@@-day observation window: at landmark $d$ they cover lead days $n\le C_d=D-1-d$ (the training-horizon scale $n_{\mathrm{train}}$ defined below does not bind here) and are right-censored at the end of the window, so the additional latent days are never used for fitting. Both components share the landmark covariate vector $x_d$, consisting of current wearables, wearable means and slopes over the most recent seven days (fewer before day~6), the draw indicator, last observed log-laboratory values, time since the last panel (capped at 60 days and divided by 60), and an explicit indicator that a first laboratory panel has become available. The hazard input additionally uses the lead-time basis defined below; the hazard logit is linear in the standardized $x_d$ and the basis terms, with no covariate-by-lead-time interactions. Before a patient's first panel, log-laboratory features use the training-cohort median (the median over all laboratory panels in the training cohort), and time since the last panel is set to its cap. The covariates in $x_d$, but not the lead-time basis, are standardized with means and standard deviations computed over the pooled training rows of both components (each sampled landmark together with its lead-day hazard rows). Both logistic components are $\ell_2$-regularized (inverse regularization strength 1.0 for the current-state logistic and 0.5 for the hazard logistic). The current-state logistic predicts the probability $g_0(x_d)$ that the patient is in flare on the current day. The hazard logistic predicts a first flare at lead day $n$, conditional on remaining flare-free through lead day $n-1$ and not being in flare at the landmark:
+\[
+g(x_d, n) = \Prb(H_d = n \mid H_d \ge n,\ S_d \neq \F,\ x_d).
+\]
+Let $n_{\mathrm{train}} = @@HAZARD_HORIZON@@$ denote the training-horizon scale and $n_{\max} = @@PMF_HORIZON@@$ the prediction-grid horizon. The hazard time basis is $\bigl(\log(1+n),\ \sqrt{n}/10,\ n/n_{\mathrm{train}}\bigr)$; it is extrapolated beyond the longest lead represented in training (at most $D-1$ days; long leads are sparse because hazard rows stop at the first flare) up to $n_{\max}$. For each ensemble member $b$, with components $g_0$ and $g$, and $1 \le n \le n_{\max}$,
+\[
+\widehat p^{(b)}_d(0) = g_0(x_d),
+\]
+\[
+\widehat p^{(b)}_d(n) = [1 - g_0(x_d)]\, g(x_d, n) \prod_{m=1}^{n-1}[1 - g(x_d, m)],
+\]
+\[
+\widehat p^{(b)}_d({>}\,n_{\max}) = [1 - g_0(x_d)] \prod_{m=1}^{n_{\max}}[1 - g(x_d, m)].
+\]
+Hazards are clipped to $[10^{-5}, 1-10^{-5}]$; by construction each row sums to one over the tail-inclusive grid, and a final normalization only removes floating-point rounding. The base fit is accompanied by @@N_HAZARD_DRAWS@@ patient-bootstrap refits of both components, giving @@N_HAZARD_MEMBERS@@ equally weighted members; the reported PMF $\widehat p_d$ is the arithmetic mean of the member PMFs, as for the HMM mixtures. Only information available through day $d$ enters prediction; training labels are used only in fitting, never at inference.
+\end{enumerate}
+
+\section{Simulation and Reproducibility Protocol}\label{sec:simulation}
+\subsection{Data-generating process}
+Each of @@N_SEEDS@@ seeds generates @@N_TOTAL@@ patients. The first @@N_TRAIN@@ patients are used for training, @@N_VAL@@ are reserved as an untouched validation partition, and @@N_TEST@@ are used for final evaluation. The validation partition was not used in the reported analysis; all run-level settings are recorded in the archived configuration file, and all fixed constants are in the tagged source. Each patient contributes @@N_DAYS@@ observed days. An additional @@FUTURE_DAYS@@ latent days are simulated solely to assess long-horizon interval coverage; no future observation enters fitting or prediction. The numerical PMF is calculated through lead day @@PMF_HORIZON@@, with all remaining mass stored in a ${>}@@PMF_HORIZON@@$ tail category.
+
+The population transition matrix is
+\begin{equation}
+P=\begin{pmatrix}
+@@TRUE_P_ROWS@@
+\end{pmatrix},
+\label{eq:trueP}
+\end{equation}
+which gives generating hitting-time means of $@@TRUE_MEAN_R@@$ days from Remission and $@@TRUE_MEAN_M@@$ days from Mild after making flare absorbing. State-dependent laboratory-draw probabilities are
+\begin{equation}
+(\lambda_{\R},\lambda_{\M},\lambda_{\F})=(@@TRUE_LAMBDA@@).
+\end{equation}
+Table~\ref{tab:emissions} lists the generating emission parameters and initial-state probabilities. Fresh wearable noise is generated independently on every patient-day. A laboratory panel is either jointly observed or jointly absent. This regime is deliberately flare-rich rather than calibrated to clinical flare frequencies: the stationary probability of Flare under \eqref{eq:trueP} is @@STAT_FLARE@@, and @@EVENT30_RATE@@ of test landmarks with complete 30-day follow-up reach the flare state within 30 days, counting landmarks already in it. Every reported HMM 30-day risk lies between @@HMM_RISK30_MIN@@ and 1, so HMM 30-day calibration is assessed over a narrow, high-risk range (event-history risks span a wider range).
+
+
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{time_to_flare_interface.pdf}
-\caption{Time-to-flare interface for one held-out synthetic patient. Top: filtered state posterior. Middle: the transient-conditional mean from Equation~\eqref{eq:condmean} and the unconditional mean from Equation~\eqref{eq:uncondmean}. The conditional mean is undefined at zero transient posterior mass and is additionally suppressed when that mass is at most $10^{-8}$. These cases are displayed as gaps, not zeros. The unconditional curve can approach zero because it includes the day-zero flare mass. Bottom: jointly observed laboratory-panel days. Dashed vertical lines mark days on which the simulator's latent state enters Flare.}
+\caption{Time-to-flare interface for one synthetic patient from a separate cohort not used for fitting, under the first seed's EM estimate of the draw model (one parameter set, not the mixture). Top: filtered state posterior. Middle: the transient-conditional mean from \eqref{eq:condmean} and the unconditional mean from \eqref{eq:uncondmean}; the two curves coincide when the flare posterior is near zero. The conditional mean is undefined at zero transient posterior mass and is additionally suppressed when that mass is at most $10^{-8}$. These cases are displayed as gaps, not zeros. The unconditional curve can approach zero because it includes the day-zero flare mass. Bottom: jointly observed laboratory-panel days (panels on the first and last day coincide with the frame). In the top and middle panels, dashed vertical lines mark days on which the simulator's latent state enters the flare state.}
 \label{fig:interface}
 \end{figure*}
-
-\subsection{Primary predictive performance}\label{sec:primary}
-Table~\ref{tab:mainresults} reports patient/seed-clustered estimates, and Figure~\ref{fig:evaluation} displays calibration, proper scores, and coverage. The endogenous-sampling HMM achieved the lowest point estimate for both the censored log score and the four-horizon mean Brier score, but its advantage over the no-draw HMM and the draw-stratified-emission HMM was small relative to uncertainty. The discrete-time event-history comparator was worse on both proper scores in this simulation. Coverage of the nominal 90\% intervals was not uniform across current states: for the draw model, landmark-weighted coverage (with landmarks grouped by the simulator's true current state, for description only) was @@COV_R@@ at Remission landmarks, @@COV_M@@ at Mild landmarks, and @@COV_F@@ at current-flare landmarks, where the interval is typically the single point zero. The overall excess over the nominal level therefore comes mainly from current-flare landmarks. Sharpness, summarized here by predictive entropy, should be considered jointly with coverage and calibration.
 
 \begin{table*}[t]
 \caption{Time-to-Flare Performance on Held-Out Test Patients}
@@ -316,7 +302,7 @@ Table~\ref{tab:mainresults} reports patient/seed-clustered estimates, and Figure
 \setlength{\tabcolsep}{4.2pt}
 \begin{tabular}{lccccc}
 \toprule
-Model & Censored log score & Mean Brier & 90\% coverage & Predictive entropy & 30-d cal. slope\\
+Model & Censored log score & Four-horizon mean Brier & 90\% coverage & Predictive entropy & 30-day calibration slope\\
 \midrule
 HMM + draw model & @@ROW_PROP@@\\
 HMM without draw model & @@ROW_NOLAM@@\\
@@ -325,25 +311,9 @@ Discrete-time event-history & @@ROW_HAZ@@\\
 \bottomrule
 \end{tabular}
 \begin{flushleft}\scriptsize
-Entries are point estimates with hierarchical 95\% confidence intervals in parentheses. Lower log and Brier scores are better. Lower entropy denotes a sharper coarsened predictive distribution, but sharpness is not interpreted without calibration. Coverage is assessed against latent continuation generated only for evaluation, including the $>@@PMF_HORIZON@@$ tail category.
+Entries are point estimates with hierarchical 95\% confidence intervals in parentheses. Lower log and Brier scores are better. Log scores and entropy are in nats. Lower entropy denotes a sharper predictive distribution, but sharpness is not interpreted without calibration. A calibration slope of one is ideal; slope intervals use @@CALIBRATION_BOOTSTRAP@@ replicates. Coverage is assessed against the simulated latent path (extended beyond the observation window for evaluation only), with the ${>}@@PMF_HORIZON@@$ tail retained as an outcome category.
 \end{flushleft}
 \end{table*}
-
-\begin{figure*}[t]
-\centering
-\subfloat[Thirty-day calibration]{\includegraphics[width=0.48\textwidth]{calibration_30d.pdf}\label{fig:calibration}}
-\hfill
-\subfloat[Censored log score]{\includegraphics[width=0.48\textwidth]{score_nll.pdf}\label{fig:nll}}
-\\[-1mm]
-\subfloat[Four-horizon mean Brier score]{\includegraphics[width=0.48\textwidth]{score_ibs4.pdf}\label{fig:ibs}}
-\hfill
-\subfloat[Nominal 90\% interval coverage]{\includegraphics[width=0.48\textwidth]{coverage90.pdf}\label{fig:coverage}}
-\caption{Distributional evaluation. Calibration is based on predicted versus observed 30-day risk among landmarks with complete 30-day follow-up. Score and coverage error bars show between-seed sample standard deviations for visualization; all inferential intervals in Table~\ref{tab:mainresults} use the hierarchical seed--patient bootstrap.}
-\label{fig:evaluation}
-\end{figure*}
-
-\subsection{Direct comparison with the no-draw HMM}
-Table~\ref{tab:paired} gives matched proper-score differences, calculated as comparator minus proposed model; positive values favor the draw model. The no-draw HMM differed by @@DIFF_NOLAM_NLL@@ (@@DIFF_NOLAM_NLL_CI@@) in censored log score and @@DIFF_NOLAM_IBS@@ (@@DIFF_NOLAM_IBS_CI@@) in mean Brier score. The intervals include zero, so this regime does not establish a reliable predictive-score benefit from the explicit $\lambda$ factor. The no-draw model's predictive entropy was nominally lower (Table~\ref{tab:mainresults}).
 
 \begin{table*}[t]
 \caption{Paired Comparator Minus Proposed Differences}
@@ -363,51 +333,104 @@ Discrete-time event-history & @@PAIR_HAZ@@\\
 \begin{flushleft}\scriptsize Positive values favor the endogenous-sampling HMM. Parentheses contain hierarchical 95\% confidence intervals.\end{flushleft}
 \end{table*}
 
+\subsection{Censoring-aware evaluation}\label{sec:censoring}
+For landmark $d$, let $C_d=D-1-d$ be the remaining observed follow-up. If a flare is observed after $h_d\le C_d$ days, the censored logarithmic score is $-\log\widehat p_d(h_d)$. If no flare is observed before administrative censoring, the score is
+\begin{equation}
+-\log\Bigl[1-\sum_{n=0}^{C_d}\widehat p_d(n)\Bigr],
+\end{equation}
+that is, minus the log of the predicted probability of no flare within the remaining $C_d$ days of follow-up (the unrenormalized survival tail). This right-censored log score is proper when censoring is independent of the event time~\cite{rindt2022}, as administrative censoring is here. Thus, patients without a flare inside @@N_DAYS@@ days remain in the analysis.
+
+For $h\in\{7,14,30,60\}$, the fixed-horizon Brier score uses landmarks with complete $h$-day follow-up,
+\begin{equation}
+\operatorname{BS}(h)=\frac1{|\mathcal D_h|}\sum_{d\in\mathcal D_h}
+\left[\widehat F_d(h)-\mathbb I\{H_d\le h\}\right]^2,
+\end{equation}
+where $\widehat F_d(h)=\sum_{n=0}^{h}\widehat p_d(n)$ is the predicted probability of a flare within $h$ days, $\mathbb I\{\cdot\}$ is the indicator function, and $\mathcal D_h$ is the set of the patient's landmarks with $C_d\ge h$; the score is computed for each patient and then averaged across patients. The reported four-horizon mean is the average of the four Brier scores. Thirty-day calibration is displayed graphically and summarized by the slope of a logistic regression of the observed 30-day outcome on the logit of the predicted risk, with an intercept~\cite{cox1958}; predicted risks are clipped to $[10^{-5},1-10^{-5}]$, and a negligible ridge penalty stabilizes the fit numerically. Slope confidence intervals use the hierarchical seed--patient bootstrap. The calibration rows include current-flare landmarks, whose observed 30-day outcome is a flare by definition and whose predicted risks are near one; slopes excluding them are given below for description only. Equal-tailed 90\% interval coverage is assessed against each patient's simulated latent path from the landmark onward (the remaining observation-window states followed by the additional latent days), with the ${>}@@PMF_HORIZON@@$ tail retained as an observed outcome category; predictive entropy, computed over the categories $\{0,\ldots,@@PMF_HORIZON@@,{>}@@PMF_HORIZON@@\}$, is the primary sharpness summary. Log scores and entropy use natural logarithms. All @@N_DAYS@@ observed days of every test patient are landmarks, and each patient's scores average that patient's landmarks. AUROC for current flare status is secondary.
+
+For performance intervals, the bootstrap first resamples seeds and then resamples patients within selected seeds, preserving every repeated landmark for a selected patient. Paired model differences are calculated at matched seed--patient pairs before the same hierarchical bootstrap. Because patients are resampled within resampled seeds, this two-stage bootstrap counts within-seed patient variation at both stages; for the primary paired comparison it gives a wider interval than a seed-level 95\% $t$ interval (Student $t$ with @@N_SEEDS_DF_WORD@@ degrees of freedom applied to the @@N_SEEDS_WORD@@ seed means of the patient-level paired differences), which is also reported (Section~\ref{sec:direct}). With only @@N_SEEDS_WORD@@ seeds, the seed-level interval is itself imprecise; in this run the seed means vary less than within-seed patient variation alone would predict, so it is probably somewhat narrower than the true uncertainty. No adjustment for multiple comparisons is applied. The main performance intervals use @@PERFORMANCE_BOOTSTRAP@@ replicates; calibration intervals use @@CALIBRATION_BOOTSTRAP@@ replicates. The primary estimand includes every landmark, including a current flare represented by the explicit day-zero mass. Of the test landmarks, @@CURRENT_FLARE_FRACTION@@ are current-flare landmarks. Scores restricted to landmarks without a current flare are not used for inference: selecting landmarks on the realized current state, which is part of the predicted outcome, makes the restricted log and Brier scores improper for the unconditional law. For description only, the archive contains this restricted analysis: there the no-draw-minus-draw log-score difference is @@NONCURRENT_DIFF_NLL@@ (@@NONCURRENT_DIFF_NLL_CI@@), and the 30-day calibration slopes are @@NCCAL_PROP@@ for the draw model and @@NCCAL_HAZ@@ for the event-history model.
+
+
+
+\begin{figure*}[t]
+\centering
+\subfloat[Thirty-day calibration]{\includegraphics[width=0.48\textwidth]{calibration_30d.pdf}\label{fig:calibration}}
+\hfill
+\subfloat[Censored log score]{\includegraphics[width=0.48\textwidth]{score_nll.pdf}\label{fig:nll}}
+\\[-1mm]
+\subfloat[Four-horizon mean Brier score]{\includegraphics[width=0.48\textwidth]{score_ibs4.pdf}\label{fig:ibs}}
+\hfill
+\subfloat[Nominal 90\% interval coverage]{\includegraphics[width=0.48\textwidth]{coverage90.pdf}\label{fig:coverage}}
+\caption{Distributional evaluation. Calibration is based on predicted versus observed 30-day risk among landmarks with complete 30-day follow-up; points are decile bins of predicted risk pooled over seeds, and the highest deciles, mostly current-flare landmarks, overlap near the upper right. Panel (b) plots the censored log score, which is already a negative log predictive probability; its axis label ``censored negative log score'' names the same quantity. In panel (d), the dashed line marks the nominal 0.90 level. Labels abbreviate the model names in Table~\ref{tab:mainresults}. Score and coverage error bars show between-seed sample standard deviations for visualization. Because all models are scored on the same patients, overlapping bars do not indicate the absence of a paired difference; inferential intervals use the hierarchical seed--patient bootstrap (Table~\ref{tab:mainresults} for each model, Table~\ref{tab:paired} for paired differences).}
+\label{fig:evaluation}
+\end{figure*}
+
+
+\subsection{Reproducibility}
+The accompanying package contains the exact configuration, fixed seeds, complete PMF arrays for every test landmark and model, all fitted HMM bases and parameter-mixture members, all event-history coefficients, scalers and bootstrap members, EM likelihood traces, landmark-level summaries, patient-level metrics, generated figures and tables, an exact environment description, and a one-command build. A release metadata file records the source snapshot and the release tag \texttt{@@RELEASE_TAG@@}. The code and reproducibility materials are archived on Zenodo \cite{jasti2026code}. Code and text were drafted with Claude~\cite{claude} and verified by the author (see the Acknowledgment). The command
+\begin{verbatim}
+make reproduce
+\end{verbatim}
+runs the tests, simulation, estimation, and evaluation in the locked environment and regenerates the results tables and figures. It also builds and checks the PDF and therefore needs the IEEE Access \LaTeX{} template, a \TeX{} installation that includes \texttt{latexmk} and the IEEEtran class, the \texttt{pdftotext}, \texttt{unzip}, and \texttt{shasum} utilities, and \texttt{git}; its final release check must run in a clean checkout of the release tag. \texttt{make results} runs the analysis and table checks without these. The source code is available at \url{https://github.com/RishiNagaJasti/crohns-hmm-flare-prediction}. Appendix~\ref{app:protocol} gives the required reproducibility sequence, Appendix~\ref{app:tests} lists the acceptance tests, and Appendix~\ref{app:repro} describes the archive.
+
+
+
+
+\section{Results}\label{sec:results}
+\subsection{Clinical time-to-flare interface}
+Fig.~\ref{fig:interface} displays a held-out trajectory under the EM estimate of the draw model from the first simulation seed (a single parameter set); the main performance tables use the full parameter mixture. The displayed patient is the first patient in a separately simulated cohort, not used for fitting, whose first flare onset falls between days 35 and 90. The transient-conditional curve remains within the fitted Remission/Mild hitting-time range whenever it is displayed. The unconditional mean falls toward zero when posterior flare mass approaches one because \eqref{eq:p0} assigns that mass to $H_d=0$.
+
+
+\subsection{Primary predictive performance}\label{sec:primary}
+Table~\ref{tab:mainresults} reports patient-averaged scores, coverage, and entropy, and calibration slopes fitted to the pooled landmarks, all with hierarchical seed--patient bootstrap intervals, and Fig.~\ref{fig:evaluation} displays calibration, proper scores, and coverage. The endogenous-sampling HMM achieved the lowest point estimate for both the censored log score and the four-horizon mean Brier score, but its advantage over the no-draw HMM and the draw-stratified-emission HMM was very small (Table~\ref{tab:paired}). The discrete-time event-history comparator was worse on both proper scores in this simulation. Coverage of the nominal 90\% intervals was not uniform across current states: for the draw model, landmark-weighted coverage (with landmarks grouped by the simulator's true current state, for description only) was @@COV_R@@ at Remission landmarks, @@COV_M@@ at Mild landmarks, and @@COV_F@@ at current-flare landmarks, where the interval is typically the single point zero. Because equal-tailed intervals of a discrete predictive law carry at least 90\% predictive probability, coverage above the nominal level is expected, and the excess comes mainly from current-flare landmarks.
+
+
+
+\subsection{Direct comparison with the no-draw HMM}\label{sec:direct}
+Table~\ref{tab:paired} gives matched proper-score differences, calculated as comparator minus proposed model; positive values favor the draw model. The no-draw HMM differed by @@DIFF_NOLAM_NLL@@ (@@DIFF_NOLAM_NLL_CI@@) in censored log score and @@DIFF_NOLAM_IBS@@ (@@DIFF_NOLAM_IBS_CI@@) in mean Brier score. Both hierarchical intervals include zero. A seed-level $t$ interval for the log-score difference, which treats the @@N_SEEDS_WORD@@ simulations as units, is @@SEED_T_CI_NLL@@, and @@N_SEEDS_FAVOR_NLL@@ of the @@N_SEEDS@@ seeds favor the draw model, whereas the corresponding interval for the mean Brier difference, @@SEED_T_CI_IBS@@, includes zero (Section~\ref{sec:censoring} compares the two interval methods). The explicit $\lambda_i$ factor therefore yields at most a very small log-score improvement, whose statistical detectability depends on the interval method; the upper hierarchical confidence limit, @@NULL_NLL_UB@@, corresponds to a relative gain of at most about @@NULL_GM_PCT@@ in the geometric mean predictive probability (Section~\ref{sec:discussion}). The no-draw HMM's predictive entropy was nominally lower (Table~\ref{tab:mainresults}).
 
 \subsection{Parameter and hitting-time recovery}
-Across the @@N_SEEDS_WORD@@ latent-state EM fits, the state-ordered laboratory-draw estimates were @@LAMBDA_RECOVERY_AND@@ for Remission, Mild, and Flare, respectively (mean $\pm$ population standard deviation across seeds), compared with generating values $(@@TRUE_LAMBDA@@)$ (Figure~\ref{fig:lambda}). The fitted transient hitting-time means were @@HIT_RECOVERY@@ days for Remission and Mild, compared with $@@TRUE_MEAN_R@@$ and $@@TRUE_MEAN_M@@$ days.
-
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\columnwidth]{lambda_recovery.pdf}
-\caption{Recovery of state-dependent laboratory-draw probabilities by latent-state EM. Error bars display population standard deviations across independent seeds; crosses show generating values.}
+\caption{Recovery of state-dependent laboratory-draw probabilities by latent-state EM. Error bars display population standard deviations across independent seeds (most are smaller than the markers); crosses show generating values.}
 \label{fig:lambda}
 \end{figure}
+Across the @@N_SEEDS_WORD@@ draw-model EM fits, the state-ordered laboratory-draw estimates were @@LAMBDA_RECOVERY_AND@@ for Remission, Mild, and Flare, respectively (mean $\pm$ population standard deviation across seeds), compared with generating values $(@@TRUE_LAMBDA@@)$ (Fig.~\ref{fig:lambda}). The fitted transient hitting-time means were @@HIT_RECOVERY@@ days for Remission and Mild, compared with $@@TRUE_MEAN_R@@$ and $@@TRUE_MEAN_M@@$ days.
 
 \subsection{Secondary discrimination result}
 Current-state AUROC for the draw model was @@PROP_AUROC@@ (@@PROP_AUROC_CI@@), computed within each test patient and averaged over the @@N_AUROC_PATIENTS@@ of @@N_ALL_TEST_PATIENTS@@ test patients with both flare and non-flare days. This near-ceiling value reflects the deliberately well-separated generating emissions and is not evidence that the time-to-flare distribution is calibrated. The proper scores and calibration results above remain the primary findings.
 
-\section{Discussion}
-Under the chosen state separability and draw rates, the explicit draw-indicator factor did not yield a statistically clear improvement over the otherwise identical HMM. This outcome is largely expected in the simulated regime: for every ordered pair of states, the per-day Kullback--Leibler divergence between the generating wearable emissions is @@KL_RATIO_MIN@@ to @@KL_RATIO_MAX@@ times that between the corresponding draw-indicator laws, so the wearable channels identify the state far more strongly than the timing of laboratory panels does. The regime is therefore a near-null setting for the draw indicator: the upper 95\% confidence limit of the log-score difference, @@NULL_NLL_UB@@, excludes a relative gain larger than about @@NULL_GM_PCT@@ in the geometric mean of the predictive probability assigned to the observed outcome. The posterior-odds contraction on lab-absent days (Appendix~\ref{app:contraction}) does not by itself imply a practically important gain in proper predictive scores. The gain may be larger when value emissions overlap more strongly, sampling contrasts are more extreme, or draw timing contains information not already captured by the wearable channels. Those regimes should be pre-specified and examined in a separate sensitivity study rather than inferred from the present experiment.
+\section{Discussion}\label{sec:discussion}
+Under the chosen state separability and draw rates, the explicit draw-indicator factor yielded at most a very small improvement over the otherwise identical HMM. The log-score difference is borderline: a seed-level $t$ interval excludes zero, but the hierarchical bootstrap interval does not, and no mean Brier difference is detected under either. This outcome is largely expected in the simulated regime: for every ordered pair of states, the per-day Kullback--Leibler divergence between the generating wearable emissions is @@KL_RATIO_MIN@@ to @@KL_RATIO_MAX@@ times that between the corresponding draw-indicator laws, so the wearable channels identify the state far more strongly than the timing of laboratory panels does. The regime is therefore a near-null setting for the draw indicator: the upper 95\% confidence limit of the log-score difference, @@NULL_NLL_UB@@, excludes a relative gain larger than about @@NULL_GM_PCT@@ in the geometric mean of the predictive probability assigned to the observed outcome. The descriptive restriction to landmarks without a current flare (Section~\ref{sec:censoring}), which is not used for inference, gives a larger but still small difference of @@NONCURRENT_DIFF_NLL@@. The posterior-odds contraction on lab-absent days (Appendix~\ref{app:contraction}) does not by itself imply a practically important gain in proper predictive scores. The gain may be larger when value emissions overlap more strongly, sampling contrasts are more extreme, or draw timing contains information not already captured by the wearable channels. Those regimes should be pre-specified and examined in a separate sensitivity study rather than inferred from the present experiment.
 
-The draw-stratified-emission HMM also produces a legitimate time-to-flare PMF in the implemented form because it retains one transition matrix and one state posterior. Its similar proper-score performance illustrates why classification AUROC alone is insufficient for establishing the value of a new clinical interface. This comparator conditions wearable emissions on the observed draw stratum and leaves one common transition law; it is not a general pattern-mixture model. The event-history comparator performed less well here, but it is supervised and structurally different. Broader studies should include joint longitudinal--survival models and latent Markov models for informative dropout such as those in \cite{bartolucci2015,bartolucci2019,marino2020}.
+The draw-stratified-emission HMM also produces a legitimate time-to-flare PMF in the implemented form because it retains one transition matrix and one state posterior. It conditions only the wearable emissions on the observed draw stratum and is not a general pattern-mixture model. Its proper scores were close to those of the proposed model (Table~\ref{tab:paired}), and its predictive entropy was slightly lower (Table~\ref{tab:mainresults}). The event-history comparator shows why classification AUROC alone is insufficient: its current-state AUROC, @@HAZ_AUROC@@, was also near the ceiling, yet its proper scores were clearly worse. That comparator is supervised and structurally different, so its weaker performance in this simulation does not establish a general ranking. Broader studies should include joint longitudinal--survival models and latent Markov models for informative dropout such as those in \cite{bartolucci2015,bartolucci2019,marino2020}.
 
-\subsection{Limitations}
-The study remains simulation-only and correctly specified for the principal HMM. State emissions are highly separated, producing near-ceiling state AUROC and limiting the realism of the classification task. The generating chain is flare-rich (stationary Flare probability @@STAT_FLARE@@), so absolute risks and calibration slopes should not be read as clinical flare frequencies. Only one Markov transition regime and one set of draw rates are used, and @@N_SEEDS_WORD@@ simulation seeds provide only a modest number of top-level uncertainty clusters. EM can converge to local optima. In every fit, the @@N_STARTS_WORD@@ observable-data starts reached final log likelihoods within @@START_SPREAD_BOUND@@ of one another; because all @@N_STARTS_WORD@@ starts are $K$-means initializations that differ only in random seed, this agreement is only weak evidence that EM avoided a poor local optimum. Under the stated relative stopping rule, every EM fit stopped after @@EM_ITER_MIN@@ to @@EM_ITER_MAX@@ iterations, well before the @@MAX_EM_ITER@@-iteration cap, so the reported solutions are converged to that tolerance. The archived traces show little remaining optimization: in every reported fit each log-likelihood increase was positive and at most @@EM_RATIO_MAX@@ times the previous one, the final update added at most @@EM_LAST_GAIN_MAX@@, and geometric extrapolation at each fit's largest observed ratio suggests about @@EM_REMAIN_MAX@@ more, against magnitudes of @@EM_ABS_LL_MIN@@ to @@EM_ABS_LL_MAX@@~$\times 10^{4}$. The responsibility-conditioned empirical-Bayes mixture is not a fully Bayesian posterior because state responsibilities are not redrawn jointly with parameters. The event-history uncertainty ensemble resamples training patients and refits both logistic components, but it remains a model-specific bootstrap rather than a joint Bayesian analysis. Equal-tailed 90\% intervals for a discrete predictive law contain at least 90\% predictive probability, so empirical coverage can exceed the nominal level (Section~\ref{sec:primary}). The fixed-horizon Brier analysis for all models uses landmarks with complete follow-up at the relevant horizon. The four-horizon mean therefore averages scores over horizon-specific eligible populations. Random censoring would require inverse-probability weighting or another censoring model. Finally, latent future continuation is available only because the data are simulated; real clinical calibration requires prospectively observed flare outcomes.
+\subsection{Limitations}\label{sec:limitations}
+The study is simulation-only, and the principal HMM is correctly specified. State emissions are highly separated, producing near-ceiling state AUROC and limiting the realism of the classification task. The generating chain is flare-rich (stationary Flare probability @@STAT_FLARE@@), so absolute risks should not be read as clinical flare frequencies, and calibration results may not transfer to lower-risk settings. Only one Markov transition regime and one set of draw rates are used, and @@N_SEEDS_WORD@@ simulation seeds provide only a modest number of top-level uncertainty clusters. EM can converge to local optima. In every fit, the @@N_STARTS_WORD@@ $k$\nobreakdash-means starts reached final log likelihoods within @@START_SPREAD_BOUND@@ of one another; because the starts differ only in the $k$\nobreakdash-means random seed, this agreement is only weak evidence that EM avoided a poor local optimum. Every EM fit met the stated relative stopping rule after @@EM_ITER_MIN@@ to @@EM_ITER_MAX@@ iterations, well before the @@MAX_EM_ITER@@-iteration cap. The archived traces show little remaining optimization: in every reported fit each log-likelihood increase was positive and at most @@EM_RATIO_MAX@@ times the previous one, the final update added at most @@EM_LAST_GAIN_MAX@@, and geometric extrapolation at each fit's largest observed ratio suggests at most about @@EM_REMAIN_MAX@@ more, against absolute final log likelihoods of about $@@EM_ABS_LL_MIN@@\times 10^{4}$ to $@@EM_ABS_LL_MAX@@\times 10^{4}$. The responsibility-conditioned empirical-Bayes mixture is not a fully Bayesian posterior because state responsibilities are not redrawn jointly with parameters. The event-history uncertainty ensemble resamples training patients and refits both logistic components, but it remains a model-specific bootstrap rather than a joint Bayesian analysis. Equal-tailed 90\% intervals for a discrete predictive law contain at least 90\% predictive probability, so empirical coverage can exceed the nominal level (Section~\ref{sec:primary}). The fixed-horizon Brier analysis for all models uses landmarks with complete follow-up at the relevant horizon. The four-horizon mean therefore averages scores over horizon-specific eligible populations. Random censoring would require inverse-probability-of-censoring weighting~\cite{graf1999} or another censoring model. Finally, latent future continuation is available only because the data are simulated; real clinical calibration requires prospectively observed flare outcomes.
 
 \subsection{Deferred external validation}
-A real-data evaluation should be undertaken only after four conditions are met: individual-level data and code reproduce every count; repeated observations are analyzed with patient-clustered or mixed-effects methods; the transition matrix is estimated on the actual observation cadence rather than overlaying daily means on visit-scale data; and the flare outcome is independently adjudicated and is not defined using the same measurement serving as the principal predictor. Scheduled study blood draws should not be interpreted as symptom-triggered clinician ordering without additional evidence. Until then, external data may motivate the model but cannot validate the time-to-flare PMF.
+A real-data evaluation should be undertaken only after four conditions are met: individual-level data and analysis code are available so that every reported count can be reproduced; repeated observations are analyzed with patient-clustered or mixed-effects methods; the transition matrix is estimated on the actual observation cadence rather than at a daily resolution imposed on visit-scale data; and the flare outcome is independently adjudicated and is not defined using the same measurement serving as the principal predictor. In many research cohorts laboratory draws are scheduled by the study protocol; such draws should not be interpreted as symptom-triggered clinician ordering without additional evidence. Until these conditions are met, external data may motivate the model but cannot validate the time-to-flare PMF.
 
 \section{Conclusion}
-A coherent hidden Markov model with endogenous laboratory sampling can generate a complete first-passage distribution at every landmark day. The clinically interpretable output requires an explicit day-zero mass, an unrenormalized survival tail, and a clear distinction between unconditional and transient-conditional means. When the model is fit without oracle states and evaluated with censoring-aware proper scores, the simulation study supports the mathematical interface but finds no clear predictive benefit from the laboratory-draw indicator in the tested regime. The appropriate next step is independent reproduction of the tagged pipeline, followed by pre-specified robustness experiments and prospective clinical validation.
+A coherent hidden Markov model with endogenous laboratory sampling can generate a complete first-passage distribution at every landmark day. The clinically interpretable output requires an explicit day-zero mass, an unrenormalized survival tail, and a clear distinction between unconditional and transient-conditional means. When the model is fit without oracle states and evaluated with censoring-aware proper scores, the simulation study shows that the interface can be estimated and evaluated end to end but finds no practically important predictive benefit from the laboratory-draw indicator in the tested regime. The appropriate next step is independent reproduction of the tagged pipeline, followed by pre-specified robustness experiments and prospective clinical validation.
 
 \appendices
-\section{Proofs}\label{app:proofs}
+\section{\texorpdfstring{\break}{}Proofs}\label{app:proofs}
 \subsection{First-passage distribution and mean}
 For $n\ge1$, a first hit at $d+n$ requires the chain to remain transient for $n-1$ steps and move to flare on the next step, giving $\vect{q}_d^{\trans}Q^{n-1}\vect{r}$. The probability of no hit through $h$ steps is $\vect{q}_d^{\trans}Q^h\vect{1}$. Summing the tail probabilities and using the Neumann series,
 \begin{align}
 \E(H_d\mid\mathcal F_d)
-&=\sum_{h=0}^{\infty}\Prb(H_d>h\mid\mathcal F_d)\\
+&=\sum_{h=0}^{\infty}\Prb(H_d>h\mid\mathcal F_d)\notag\\
 &=\vect{q}_d^{\trans}\left(\sum_{h=0}^{\infty}Q^h\right)\vect{1}
 =\vect{q}_d^{\trans}(I-Q)^{-1}\vect{1}.
 \end{align}
 The day-zero mass contributes zero to the mean but reduces $\vect{q}_d^{\trans}\vect{1}$, allowing the unconditional mean to approach zero.
 
 \subsection{Transient-conditional bound}
-Let $w_i=\pi_d(i)/(\pi_d(\R)+\pi_d(\M))$ for $i\in\{\R,\M\}$. Then $w_i\ge0$, $w_{\R}+w_{\M}=1$, and Equation~\eqref{eq:condmean} equals $w_{\R}m_{\R}+w_{\M}m_{\M}$, proving Equation~\eqref{eq:bound}.
+Let $\omega_i=\pi_d(i)/(\pi_d(\R)+\pi_d(\M))$ for $i\in\{\R,\M\}$. Then $\omega_i\ge0$, $\omega_{\R}+\omega_{\M}=1$, and \eqref{eq:condmean} equals $\omega_{\R}m_{\R}+\omega_{\M}m_{\M}$, proving \eqref{eq:bound}.
 
 \subsection{Posterior-odds contraction on a lab-absent day}\label{app:contraction}
-When $L_d=0$, Equation~\eqref{eq:emission} gives
+When $L_d=0$, the emission factor \eqref{eq:emission} and the update step \eqref{eq:update} give
 \begin{equation}
 \frac{\pi_d(i)}{\pi_d(j)}=
 \frac{1-\lambda_i}{1-\lambda_j}
@@ -415,55 +438,59 @@ When $L_d=0$, Equation~\eqref{eq:emission} gives
 {\phi_p(Y_d^{(w)};\vect{\mu}_j^{(w)},\vect{\sigma}_j^{(w)})}
 \frac{\pi_{d\mid d-1}(i)}{\pi_{d\mid d-1}(j)}.
 \end{equation}
-Holding the remaining parameters and the predictive prior fixed, omitting the draw factor removes the first ratio. Thus, if $\lambda_i>\lambda_j$, endogenous sampling contracts the posterior odds for $i$ relative to $j$ by a factor strictly between zero and one.
+Holding the remaining parameters and the predictive prior fixed, omitting the draw factor removes the first ratio. Thus, if $1>\lambda_i>\lambda_j$, endogenous sampling contracts the posterior odds for $i$ relative to $j$ by a factor strictly between zero and one.
 
-\section{Exact Reproducibility Protocol}\label{app:protocol}
+\section{\texorpdfstring{\break}{}Exact Reproducibility Protocol}\label{app:protocol}
 The reported results were produced and checked by the following sequence.
 \begin{enumerate}
-\item Archive the manuscript, repository snapshot, and analysis inputs unchanged.
-\item Create a clean environment from the supplied exact-version requirements file. Set numerical-library thread counts to one for deterministic performance.
-\item Run the unit tests. Confirm that absent laboratory values never enter the HMM density, every PMF sums to one including its tail, the conditional mean satisfies Equation~\eqref{eq:bound}, and no HMM fitting function reads simulator states.
-\item Run \texttt{make reproduce} (or \texttt{make results}, which omits the manuscript build and needs no \TeX{} installation). Confirm the configuration is @@N_SEEDS@@ seeds, @@N_TOTAL@@ patients per seed, a @@N_TRAIN@@/@@N_VAL@@/@@N_TEST@@ split, @@N_DAYS@@ observed days, @@FUTURE_DAYS@@ future latent days, a @@PMF_HORIZON@@-day PMF grid plus tail, @@N_PARAM_DRAWS@@ parameter draws plus the EM estimate for each HMM, @@N_HAZARD_DRAWS@@ patient-bootstrap hazard refits plus the base fit, and @@N_STARTS_WORD@@ primary EM starts.
-\item Verify that each seed writes complete PMF arrays, state posteriors, fitted base objects, every HMM mixture member, every event-history bootstrap member, feature names, training-derived laboratory references, EM traces, and patient identifiers used in resampling; verify that final tables are regenerated from the archived canonical outputs.
-\item Recompute every manuscript value from the generated CSV/JSON files. No value in a table or caption is entered by hand.
-\item Create an immutable release containing code, tests, configuration, container specification, environment, complete predictions, model objects, figures, tables, source, and PDF. Record the source commit and release tag. The release tag \texttt{@@RELEASE_TAG@@} is populated from the release configuration. The public archive DOI is @@PUBLIC_ARCHIVE_DOI@@.
+\item Archive the manuscript, repository snapshot, and run configuration unchanged.
+\item Create a clean environment from the supplied exact-version requirements file. Set numerical-library thread counts to one for deterministic results.
+\item Run the unit tests. Confirm that absent laboratory values never enter the HMM density, every HMM PMF sums to one including its tail (each row is also divided by its total, which before this step differs from one only by floating-point rounding), the conditional mean of each single parameter set satisfies \eqref{eq:bound}, and no HMM fitting function reads simulator states.
+\item Run \texttt{make reproduce} (or \texttt{make results}, which omits the manuscript build and needs no \TeX{} installation). Confirm the configuration is @@N_SEEDS@@ seeds, @@N_TOTAL@@ patients per seed, a @@N_TRAIN@@/@@N_VAL@@/@@N_TEST@@ split, @@N_DAYS@@ observed days, @@FUTURE_DAYS@@ future latent days, a @@PMF_HORIZON@@-day PMF grid plus tail, @@N_PARAM_DRAWS@@ parameter draws plus the EM estimate for each HMM, @@N_HAZARD_DRAWS@@ patient-bootstrap event-history refits plus the base fit, and @@N_STARTS_WORD@@ EM starts per fit.
+\item Verify that each seed writes complete PMF arrays, state posteriors, fitted base objects, every HMM mixture member, every event-history bootstrap member, feature names, training-derived laboratory references, EM traces, and patient identifiers used in resampling; verify that the performance, paired-difference, and calibration tables are regenerated from the archived canonical outputs.
+\item Regenerate every reported result from the archived output files and the generating constants in the pipeline source, using the script \texttt{fill\_\allowbreak manuscript.py}. No result value in a table or caption is entered by hand.
+\item Create the release: a git tag for the source and a Zenodo deposit containing code, tests, configuration, container specification, environment, complete predictions, model objects, figures, tables, source, and PDF. Record the source commit and release tag. The release tag is \texttt{@@RELEASE_TAG@@}. The public archive DOI is @@PUBLIC_ARCHIVE_DOI@@.
 \end{enumerate}
 
-\section{Acceptance Tests}\label{app:tests}
-The tagged release must satisfy the following assertions.
+\section{\texorpdfstring{\break}{}Acceptance Tests}\label{app:tests}
+Item 1 is checked by unit tests for the HMMs and by the verification script for the archived PMFs of all four models; items 11 and 12 by unit tests on small synthetic inputs and by the verification script on the archived outputs; items 8 and 10 by the verification script; and items 2--7 and 9 only by unit tests (for the calibration intervals in item 9, the resampling unit is fixed by construction).
 \begin{enumerate}
-\item For every landmark and model, $\sum_{n=0}^{@@PMF_HORIZON@@}\widehat p_d(n)+\widehat p_d(>@@PMF_HORIZON@@)=1$ to numerical tolerance.
-\item For every HMM parameter draw, the conditional mean is either suppressed (transient mass at most $10^{-8}$) or lies between the two state-specific means.
+\item For every landmark and model, the PMF, including the ${>}@@PMF_HORIZON@@$ tail category, sums to one to numerical tolerance (each mixture member's row is divided by its total, which before that step differs from one only by floating-point rounding).
+\item For each member of an HMM parameter mixture, the conditional mean is either suppressed (transient mass at most $10^{-8}$) or lies between the two state-specific means.
 \item Changing a stored laboratory value on a day with $L_d=0$ leaves the HMM likelihood unchanged.
 \item The simulator draws a new wearable error vector on every patient-day.
 \item Training, validation, and test patient identifiers are disjoint.
-\item HMM estimation uses only wearable values, laboratory values when drawn, and draw indicators. Simulator state arrays are not read by HMM initialization, estimation, or filtering. They are used to define evaluation outcomes and by the separately identified supervised event-history comparator during training.
+\item HMM estimation uses only wearable values, laboratory values when drawn, and draw indicators. Simulator state arrays are not read by HMM initialization, estimation, or filtering. They are used only for evaluation (outcomes, descriptive breakdowns by current state, and the exemplar patient and its flare-entry days in Fig.~\ref{fig:interface}) and to train the separately identified supervised event-history comparator.
 \item Censored log scores use the survival tail and retain patients with no observed flare.
 \item Draw-stratified-emission and no-draw HMMs are transformed to the same time-to-flare outcome as the proposed HMM.
-\item Hierarchical confidence intervals resample seeds and patients, never individual patient-day rows as independent observations.
-\item Generated tables agree with the manuscript to the displayed precision when independently regenerated from the archived patient-level files.
+\item Hierarchical confidence intervals resample seeds, then patients within seeds; by construction, each resampled unit is a patient-level summary (for calibration, all of a patient's landmark rows), never a patient-day row.
+\item Generated tables agree with the manuscript to the displayed precision when regenerated by the verification script from the archived patient- and landmark-level files.
 \item The event-history pre-panel laboratory reference is computed from training data and accompanied by an explicit panel-history indicator; no generating laboratory parameter enters the comparator.
-\item Every seed archives a complete PMF tensor, every fitted model object, the selected and non-selected EM starts, and all patient-bootstrap hazard members.
+\item Every seed archives a complete PMF tensor, every fitted model object, the likelihood traces and selection diagnostics of the selected and non-selected EM starts, and all patient-bootstrap event-history members.
 \end{enumerate}
 
+\section{\texorpdfstring{\break}{}Data and Code Availability}\label{app:repro}
+Source code, complete predictive distributions, fitted models, tables, figures, and the locked environment are archived on Zenodo (DOI @@PUBLIC_ARCHIVE_DOI@@)~\cite{jasti2026code}; the source carries the tag \texttt{@@RELEASE_TAG@@} in the GitHub repository.
 
+\section*{Acknowledgment}\pdfbookmark[1]{Acknowledgment}{ack}
+The author thanks Dr.~Jonathan Kenigson, co-author of the earlier version of this work~\cite{jasti2026preprint}, for guidance on this project and for his help with that earlier version.
 
-
-
-\section{Reproducibility}\label{app:repro}
-Versioned source code, complete predictive distributions, fitted model objects, generated tables and figures, and the locked computational environment are archived on Zenodo at DOI @@PUBLIC_ARCHIVE_DOI@@ \cite{jasti2026code}. The corresponding source is tagged at GitHub release \texttt{@@RELEASE_TAG@@}.
-
-\section*{Acknowledgment}
-\emph{Use of generative AI.} Anthropic's Claude (claude.ai), a large language model~\cite{claude}, was used in preparing this article; no other AI system was used. Claude drafted the simulation, estimation, evaluation, and figure-generation code and the acceptance tests (Sections~V--VII and Appendices~B--D), drafted and revised text in every section, and was used to cross-check the equations against the code. The author directed the work, reviewed and edited all AI-assisted code and text, and checked every reported result by rerunning the pipeline and regenerating all tables from the archived outputs. The author takes full responsibility for the content of this article.
+\emph{Use of generative artificial intelligence (AI).} Anthropic's Claude (claude.ai), a large language model~\cite{claude}, was used in preparing this article; no other AI system was used. Claude drafted the simulation, estimation, evaluation, and figure-generation code and the acceptance tests (Sections~\ref{sec:estimation}--\ref{sec:results} and Appendices~\ref{app:protocol}--\ref{app:repro}), drafted and revised text in every section, and was used to cross-check the equations against the code. The author directed the work, reviewed and edited all AI-assisted code and text, and checked every reported result by rerunning the pipeline. The author takes full responsibility for the content of this article.
 
 \balance
 \begin{thebibliography}{99}
+
+\bibitem{claude} Anthropic, ``Claude,'' large language model. Anthropic PBC, San Francisco, CA, USA. Accessed: Oct. 5, 2026. [Online]. Available: \url{https://claude.ai}
+
+\bibitem{jasti2026preprint} R. Jasti and J. Kenigson, ``A Bayesian hidden Markov framework for early prediction of Crohn's disease flares: Integrating wearable sensors with clinical biomarkers via hitting-time analysis,'' Cambridge Open Engage, Apr. 2026, doi: 10.33774/coe-2026-v9f5w.
+
+\bibitem{lange2015} J. M. Lange, R. A. Hubbard, L. Y. T. Inoue, and V. N. Minin, ``A joint model for multistate disease processes and random informative observation times, with applications to electronic medical records data,'' \emph{Biometrics}, vol. 71, no. 1, pp. 90--101, 2015, doi: 10.1111/biom.12252.
 
 \bibitem{little_rubin} R. J. A. Little and D. B. Rubin, \emph{Statistical Analysis with Missing Data}, 3rd ed. Hoboken, NJ, USA: Wiley, 2019.
 
 \bibitem{daniels_hogan} M. J. Daniels and J. W. Hogan, \emph{Missing Data in Longitudinal Studies: Strategies for Bayesian Modeling and Sensitivity Analysis}. Boca Raton, FL, USA: Chapman \& Hall/CRC, 2008.
 
-\bibitem{diggle} P. J. Diggle and M. G. Kenward, ``Informative drop-out in longitudinal data analysis,'' \emph{J. Roy. Statist. Soc. Ser. C}, vol. 43, no. 1, pp. 49--93, 1994.
+\bibitem{diggle} P. J. Diggle and M. G. Kenward, ``Informative drop-out in longitudinal data analysis,'' \emph{J. Roy. Statist. Soc. Ser. C}, vol. 43, no. 1, pp. 49--93, 1994, doi: 10.2307/2986113.
 
 \bibitem{bartolucci2015} F. Bartolucci and A. Farcomeni, ``A discrete time event-history approach to informative drop-out in mixed latent Markov models with covariates,'' \emph{Biometrics}, vol. 71, no. 1, pp. 80--89, 2015, doi: 10.1111/biom.12224.
 
@@ -471,13 +498,11 @@ Versioned source code, complete predictive distributions, fitted model objects, 
 
 \bibitem{marino2020} M. F. Marino and M. Alf\`o, ``Finite mixtures of hidden Markov models for longitudinal responses subject to drop out,'' \emph{Multivariate Behav. Res.}, vol. 55, no. 5, pp. 647--663, 2020, doi: 10.1080/00273171.2019.1660606.
 
-\bibitem{pandolfi2023} S. Pandolfi, F. Bartolucci, and F. Pennoni, ``A hidden Markov model for continuous longitudinal data with missing responses and dropout,'' \emph{Biometrical J.}, vol. 65, no. 5, Art. no. e2200016, 2023, doi: 10.1002/bimj.202200016.
+\bibitem{pandolfi2023} S. Pandolfi, F. Bartolucci, and F. Pennoni, ``A hidden Markov model for continuous longitudinal data with missing responses and dropout,'' \emph{Biometrical J.}, vol. 65, no. 5, Art. no. 2200016, 2023, doi: 10.1002/bimj.202200016.
 
 \bibitem{speekenbrink2025} M. Speekenbrink and I. Visser, ``State-dependent missingness in hidden Markov models, with an application to drop-out in a clinical trial,'' \emph{Psychometrika}, vol. 90, no. 2, pp. 476--507, 2025, doi: 10.1017/psy.2024.3.
 
-\bibitem{lange2015} J. M. Lange, R. A. Hubbard, L. Y. T. Inoue, and V. N. Minin, ``A joint model for multistate disease processes and random informative observation times, with applications to electronic medical records data,'' \emph{Biometrics}, vol. 71, no. 1, pp. 90--101, 2015, doi: 10.1111/biom.12252.
-
-\bibitem{rabiner} L. R. Rabiner, ``A tutorial on hidden Markov models and selected applications in speech recognition,'' \emph{Proc. IEEE}, vol. 77, no. 2, pp. 257--286, 1989.
+\bibitem{rabiner} L. R. Rabiner, ``A tutorial on hidden Markov models and selected applications in speech recognition,'' \emph{Proc. IEEE}, vol. 77, no. 2, pp. 257--286, 1989, doi: 10.1109/5.18626.
 
 \bibitem{cappe} O. Capp\'e, E. Moulines, and T. Ryd\'en, \emph{Inference in Hidden Markov Models}. New York, NY, USA: Springer, 2005.
 
@@ -485,23 +510,25 @@ Versioned source code, complete predictive distributions, fitted model objects, 
 
 \bibitem{tsiatis} A. A. Tsiatis and M. Davidian, ``Joint modeling of longitudinal and time-to-event data: An overview,'' \emph{Statist. Sinica}, vol. 14, no. 3, pp. 809--834, 2004.
 
-\bibitem{lee_whitmore} M.-L. T. Lee and G. A. Whitmore, ``Threshold regression for survival analysis: Modeling event times by a stochastic process reaching a boundary,'' \emph{Statist. Sci.}, vol. 21, no. 4, pp. 501--513, 2006.
+\bibitem{lee_whitmore} M.-L. T. Lee and G. A. Whitmore, ``Threshold regression for survival analysis: Modeling event times by a stochastic process reaching a boundary,'' \emph{Statist. Sci.}, vol. 21, no. 4, pp. 501--513, 2006, doi: 10.1214/088342306000000330.
 
-\bibitem{alaa} A. M. Alaa, S. Hu, and M. van der Schaar, ``Learning from clinical judgments: Semi-Markov-modulated marked Hawkes processes for risk prognosis,'' in \emph{Proc. 34th Int. Conf. Mach. Learn. (ICML)}, 2017, pp. 60--69.
+\bibitem{alaa} A. M. Alaa, S. Hu, and M. van der Schaar, ``Learning from clinical judgments: Semi-Markov-modulated marked Hawkes processes for risk prognosis,'' in \emph{Proc. 34th Int. Conf. Mach. Learn. (ICML)}, vol. 70, 2017, pp. 60--69.
 
 \bibitem{liu_cthmm} Y.-Y. Liu, S. Li, F. Li, L. Song, and J. M. Rehg, ``Efficient learning of continuous-time hidden Markov models for disease progression,'' in \emph{Proc. Adv. Neural Inf. Process. Syst. (NIPS)}, vol. 28, 2015, pp. 3600--3608.
 
 \bibitem{graf1999} E. Graf, C. Schmoor, W. Sauerbrei, and M. Schumacher, ``Assessment and comparison of prognostic classification schemes for survival data,'' \emph{Statist. Med.}, vol. 18, nos. 17--18, pp. 2529--2545, 1999.
 
-\bibitem{gneiting2007} T. Gneiting and A. E. Raftery, ``Strictly proper scoring rules, prediction, and estimation,'' \emph{J. Amer. Statist. Assoc.}, vol. 102, no. 477, pp. 359--378, 2007.
+\bibitem{gneiting2007} T. Gneiting and A. E. Raftery, ``Strictly proper scoring rules, prediction, and estimation,'' \emph{J. Amer. Statist. Assoc.}, vol. 102, no. 477, pp. 359--378, 2007, doi: 10.1198/016214506000001437.
 
-\bibitem{hirten2021} R. P. Hirten et al., ``Longitudinal autonomic nervous system measures correlate with stress and ulcerative colitis disease activity and predict flare,'' \emph{Inflamm. Bowel Dis.}, vol. 27, no. 10, pp. 1576--1584, 2021.
+\bibitem{hirten2021} R. P. Hirten \emph{et al.}, ``Longitudinal autonomic nervous system measures correlate with stress and ulcerative colitis disease activity and predict flare,'' \emph{Inflamm. Bowel Dis.}, vol. 27, no. 10, pp. 1576--1584, 2021, doi: 10.1093/ibd/izaa323.
 
-\bibitem{hirten2025} R. P. Hirten et al., ``Physiological data collected from wearable devices identify and predict inflammatory bowel disease flares,'' \emph{Gastroenterology}, vol. 168, no. 5, pp. 939--951.e5, 2025, doi: 10.1053/j.gastro.2024.12.024.
+\bibitem{hirten2025} R. P. Hirten \emph{et al.}, ``Physiological data collected from wearable devices identify and predict inflammatory bowel disease flares,'' \emph{Gastroenterology}, vol. 168, no. 5, pp. 939--951.e5, 2025, doi: 10.1053/j.gastro.2024.12.024.
 
-\bibitem{jasti2026code} R. Jasti, ``A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials,'' version @@SOFTWARE_VERSION@@, Zenodo, 2026, doi: \nolinkurl{@@PUBLIC_ARCHIVE_DOI@@}.
+\bibitem{rindt2022} D. Rindt, R. Hu, D. Steinsaltz, and D. Sejdinovic, ``Survival regression with proper scoring rules and monotonic neural networks,'' in \emph{Proc. 25th Int. Conf. Artif. Intell. Statist. (AISTATS)}, vol. 151, 2022, pp. 1190--1205.
 
-\bibitem{claude} Anthropic, ``Claude,'' large language model. Anthropic PBC, San Francisco, CA, USA. Accessed: Jul.--Sep. 2026. [Online]. Available: \url{https://claude.ai}
+\bibitem{cox1958} D. R. Cox, ``Two further applications of a model for binary regression,'' \emph{Biometrika}, vol. 45, nos. 3--4, pp. 562--565, 1958, doi: \mbox{10.1093/biomet/45.3-4.562}.
+
+\bibitem{jasti2026code} R. Jasti, ``A Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease Under Endogenous Laboratory Sampling: Code and Reproducibility Materials,'' version @@SOFTWARE_VERSION@@, Zenodo, 2026, doi: \mbox{@@PUBLIC_ARCHIVE_DOI@@}.
 
 \end{thebibliography}
 

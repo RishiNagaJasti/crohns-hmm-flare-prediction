@@ -60,6 +60,12 @@ def main() -> None:
     def rng_to(lo: float, hi: float, d: int) -> str:
         return f"{num(lo, d)} to {num(hi, d)}"
 
+    noncur_cal = json.loads((outputs / "tables" / "noncurrent_flare_calibration_30d.json").read_text())
+
+    def cal_slope_text(model: str) -> str:
+        c = noncur_cal[model]
+        return f"{c['slope']:.3f} ({rng(c['slope_lo'], c['slope_hi'], 3)})"
+
     def row(name: str) -> str:
         r = wide.loc[name]
         return (
@@ -80,8 +86,8 @@ def main() -> None:
     def paircell(name: str) -> str:
         a = pair(name, "nll"); b = pair(name, "ibs4")
         return (
-            f"{signed(a.comparator_minus_proposed, 4)} ({rng(a.ci_low, a.ci_high, 4)}) & "
-            f"{signed(b.comparator_minus_proposed, 5)} ({rng(b.ci_low, b.ci_high, 5)})"
+            f"{signed(a.comparator_minus_proposed, 4)} ({rng_to(a.ci_low, a.ci_high, 4)}) & "
+            f"{signed(b.comparator_minus_proposed, 5)} ({rng_to(b.ci_low, b.ci_high, 5)})"
         )
 
     def noncur(model: str, metric: str) -> pd.Series:
@@ -215,6 +221,7 @@ def main() -> None:
         "@@SEED_T_CI_IBS@@": rng_to(t_ibs[0], t_ibs[1], 5),
         "@@NLL_DIFF_PCT@@": f"{100 * nol.comparator_minus_proposed / prop.nll:.2f}",
         "@@N_SEEDS_WORD@@": words[config["n_seeds"]],
+        "@@N_SEEDS_DF_WORD@@": words[config["n_seeds"] - 1],
         "@@EM_TOL@@": f"$10^{{{tol_exp}}}$",
         "@@MAX_EM_ITER@@": str(config["max_em_iter"]),
         "@@COINCIDENT_PHRASE@@": (f"In all {n_fits} fits" if coincident == n_fits
@@ -235,6 +242,9 @@ def main() -> None:
         "@@STAT_FLARE@@": f"{stationary[2]:.2f}",
         "@@EVENT30_RATE@@": f"{100 * event30:.1f}\\%",
         "@@HMM_RISK30_MIN@@": f"{np.floor(100 * risk30.min()) / 100:.2f}",
+        "@@HAZ_AUROC@@": f"{wide.loc[MODEL_HAZ].auroc:.4f}",
+        "@@NCCAL_PROP@@": cal_slope_text(MODEL_DRAW),
+        "@@NCCAL_HAZ@@": cal_slope_text(MODEL_HAZ),
         "@@TABLE1_WEAR_ROWS@@": table1_wear,
         "@@TABLE1_LAB_ROWS@@": table1_lab,
         "@@TABLE1_ETA_ROWS@@": table1_eta,
@@ -280,7 +290,7 @@ def main() -> None:
         "@@NONCURRENT_ROW_PROP@@": noncur_row(MODEL_DRAW),
         "@@NONCURRENT_ROW_NOLAM@@": noncur_row(MODEL_NO_DRAW),
         "@@NONCURRENT_DIFF_NLL@@": signed(ncd.comparator_minus_proposed, 4),
-        "@@NONCURRENT_DIFF_NLL_CI@@": rng(ncd.ci_low, ncd.ci_high, 4),
+        "@@NONCURRENT_DIFF_NLL_CI@@": rng_to(ncd.ci_low, ncd.ci_high, 4),
         "@@NONCURRENT_DIFF_IBS@@": signed(ncdb.comparator_minus_proposed, 5),
         "@@NONCURRENT_DIFF_IBS_CI@@": rng(ncdb.ci_low, ncdb.ci_high, 5),
         "@@N_NONCURRENT_ROWS@@": f"{int(noncur_obj['n_noncurrent_landmark_rows']):,}",
@@ -294,8 +304,8 @@ def main() -> None:
         "@@EM_RATIO_MAX@@": f"{np.ceil(100 * em_ratio_max) / 100:.2f}",
         "@@EM_LAST_GAIN_MAX@@": f"{np.ceil(100 * em_last_gain_max) / 100:.2f}",
         "@@EM_REMAIN_MAX@@": f"{np.ceil(100 * em_remain_max) / 100:.2f}",
-        "@@EM_ABS_LL_MIN@@": f"{np.floor(min(em_abs_ll) / 1e3) / 10:.1f}",
-        "@@EM_ABS_LL_MAX@@": f"{np.ceil(max(em_abs_ll) / 1e3) / 10:.1f}",
+        "@@EM_ABS_LL_MIN@@": f"{min(em_abs_ll) / 1e4:.1f}",
+        "@@EM_ABS_LL_MAX@@": f"{max(em_abs_ll) / 1e4:.1f}",
         "@@NULL_NLL_UB@@": f"{nol.ci_high:.4f}",
         "@@NULL_GM_PCT@@": f"{100 * np.expm1(nol.ci_high):.1f}\\%",
     }

@@ -38,15 +38,18 @@ committed; they are never redistributed.
 ## Reproducing exactly
 
 The SHA-256 values in `UPSTREAM_SHA256.txt` correspond to the IEEE Access
-template as of the download date recorded in this repository's initial
-release. IEEE may update the template over time; if your download has
-different SHA-256 values, the build will fail with a clear message. In
-that case, either:
+template archive that this release was built against. IEEE may update the
+template over time; if your download has different SHA-256 values, the
+build will fail with a clear message. In that case, either:
 
 - Verify the change is legitimate (a real IEEE template revision) and
-  update `UPSTREAM_SHA256.txt` with the new SHA-256 values, or
-- Download an archived copy of the template version this repository was
-  built against.
+  update `UPSTREAM_SHA256.txt` with the new SHA-256 values (this edits a
+  tracked file, so `make verify` will then fail its clean-worktree check; use
+  it only for a local PDF build), or
+- Download the template version this repository was built against, which
+  IEEE Access links directly from
+  https://ieeeaccess.ieee.org/authors/preparing-your-article/
+  (ACCESS_latex_template_20260513-1-1.zip).
 
 ## Redistribution
 
