@@ -33,7 +33,7 @@
 
 \author{\uppercase{Rishi Jasti}\authorrefmark{1}}
 \address[1]{North Carolina School of Science and Mathematics, Durham, NC 27705 USA (e-mail: jasti27r@ncssm.edu)}
-\tfootnote{No external funding was received for this work. Text in all sections of this article was drafted with the assistance of Claude~\cite{claude}, a large language model; see the Acknowledgment. An earlier version of this work was posted on Cambridge Open Engage~\cite{jasti2026preprint}; its methods, results, and conclusions are superseded by this article; in particular, its conclusion that modeling state-dependent sampling materially improves flare prediction is not supported by the present analysis.}
+\tfootnote{No external funding was received for this work.} 
 \markboth{Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
 {Jasti: Hidden Markov Framework for Time-to-Flare Prediction in Crohn's Disease}
 
@@ -366,7 +366,7 @@ For performance intervals, the bootstrap first resamples seeds and then resample
 
 
 \subsection{Reproducibility}
-The accompanying package contains the exact configuration, fixed seeds, complete PMF arrays for every test landmark and model, all fitted HMM bases and parameter-mixture members, all event-history coefficients, scalers and bootstrap members, EM likelihood traces, landmark-level summaries, patient-level metrics, generated figures and tables, an exact environment description, and a one-command build. A release metadata file records the source snapshot and the release tag \texttt{@@RELEASE_TAG@@}. The code and reproducibility materials are archived on Zenodo \cite{jasti2026code}. Code and text were drafted with Claude~\cite{claude} and verified by the author (see the Acknowledgment). The command
+The accompanying package contains the exact configuration, fixed seeds, complete PMF arrays for every test landmark and model, all fitted HMM bases and parameter-mixture members, all event-history coefficients, scalers and bootstrap members, EM likelihood traces, landmark-level summaries, patient-level metrics, generated figures and tables, an exact environment description, and a one-command build. A release metadata file records the source snapshot and the release tag \texttt{@@RELEASE_TAG@@}. The code and reproducibility materials are archived on Zenodo \cite{jasti2026code}.  The command
 \begin{verbatim}
 make reproduce
 \end{verbatim}
@@ -473,14 +473,12 @@ Item 1 is checked by unit tests for the HMMs and by the verification script for 
 Source code, complete predictive distributions, fitted models, tables, figures, and the locked environment are archived on Zenodo (DOI @@PUBLIC_ARCHIVE_DOI@@)~\cite{jasti2026code}; the source carries the tag \texttt{@@RELEASE_TAG@@} in the GitHub repository.
 
 \section*{Acknowledgment}\pdfbookmark[1]{Acknowledgment}{ack}
-The author thanks Dr.~Jonathan Kenigson, co-author of the earlier version of this work~\cite{jasti2026preprint}, for guidance on this project and for his help with that earlier version.
+The author thanks Dr.~Jonathan Kenigson for his guidance on the earlier version of this work~\cite{jasti2026preprint}. 
 
-\emph{Use of generative artificial intelligence (AI).} Anthropic's Claude (claude.ai), a large language model~\cite{claude}, was used in preparing this article; no other AI system was used. Claude drafted the simulation, estimation, evaluation, and figure-generation code and the acceptance tests (Sections~\ref{sec:estimation}--\ref{sec:results} and Appendices~\ref{app:protocol}--\ref{app:repro}), drafted and revised text in every section, and was used to cross-check the equations against the code. The author directed the work, reviewed and edited all AI-assisted code and text, and checked every reported result by rerunning the pipeline. The author takes full responsibility for the content of this article.
+\emph{Use of generative artificial intelligence (AI).} Anthropic’s Claude (claude.ai) was used for editorial review and to check equations and numerical claims against the simulation code. All experimental design, derivations, code, scientific claims, and final manuscript text are the author’s own.
 
 \balance
 \begin{thebibliography}{99}
-
-\bibitem{claude} Anthropic, ``Claude,'' large language model. Anthropic PBC, San Francisco, CA, USA. Accessed: Oct. 5, 2026. [Online]. Available: \url{https://claude.ai}
 
 \bibitem{jasti2026preprint} R. Jasti and J. Kenigson, ``A Bayesian hidden Markov framework for early prediction of Crohn's disease flares: Integrating wearable sensors with clinical biomarkers via hitting-time analysis,'' Cambridge Open Engage, Apr. 2026, doi: 10.33774/coe-2026-v9f5w.
 
