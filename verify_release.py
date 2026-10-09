@@ -505,7 +505,8 @@ def main() -> None:
                               text=True, check=True).stdout)
         for mode in ([], ["-raw"]))
     for phrase in ["makes the restricted log and Brier scores improper", "stationary probability of Flare",
-                   "weak evidence that EM avoided a poor local optimum", "a large language model",
+                   "weak evidence that EM avoided a poor local optimum",
+                   "used for editorial review and to check equations",
                    "no adjustment for multiple comparisons is applied"]:
         assert squash(phrase) in pdf_squashed, f"compiled PDF is missing current text: {phrase!r}"
     assert pdf.stat().st_mtime >= (root / "Crohns_HMM_Time_to_Flare_Study.tex").stat().st_mtime, (

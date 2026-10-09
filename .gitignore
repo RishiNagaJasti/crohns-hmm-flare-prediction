@@ -34,3 +34,6 @@ build/
 
 # Official IEEE template files are never committed
 vendor/ieeeaccess/upstream/
+
+# macOS Finder metadata
+.DS_Store
